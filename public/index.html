@@ -713,7 +713,7 @@
         <div id="mainContent">
             <div class="tabs">
                 <button class="tab" onclick="switchTab('home')">🏠 首页</button>
-                <button class="tab admin-only" onclick="switchTab('database')" style="display: none;">📊 数据库</button>
+                <button class="tab admin-only" onclick="switchTab('system')" style="display: none;">⚙️ 系统管理</button>
                 <button class="tab admin-only" onclick="switchTab('channels')" style="display: none;">🔗 频道管理</button>
                 <button class="tab admin-only" onclick="switchTab('tokens')" style="display: none;">🔑 令牌管理</button>
                 <button class="tab admin-only" onclick="switchTab('pricing')" style="display: none;">💰 定价管理</button>
@@ -791,13 +791,13 @@
                 </div>
             </div>
 
-            <!-- Database Tab -->
-            <div id="database" class="tab-content">
+            <!-- System Management Tab -->
+            <div id="system" class="tab-content">
                 <div class="card">
                     <div class="card-header">
-                        <h3 class="card-title">📊 数据库管理</h3>
+                        <h3 class="card-title">⚙️ 系统管理</h3>
                     </div>
-                    <p style="color: #4a5568; margin-bottom: 20px;">点击下面的按钮来初始化数据库表结构。如果这是首次使用，请先进行数据库初始化。</p>
+                    <p style="color: #4a5568; margin-bottom: 20px;">管理系统数据库，包括初始化表结构等操作。如果这是首次使用，请先进行数据库初始化。</p>
                     <button class="btn" onclick="initializeDatabase()">🔄 初始化数据库</button>
                 </div>
             </div>
@@ -1248,7 +1248,7 @@
         // Tab switching
         function switchTab(tabName) {
             // 检查是否为管理员专用tab且用户未登录
-            const adminOnlyTabs = ['database', 'channels', 'tokens', 'pricing', 'api-test'];
+            const adminOnlyTabs = ['system', 'channels', 'tokens', 'pricing', 'api-test'];
             if (adminOnlyTabs.includes(tabName) && !adminToken) {
                 showAlert('请先登录后再访问管理功能', 'error');
                 return;
@@ -1294,8 +1294,8 @@
                 case 'api-test':
                     // API测试页面不需要加载数据
                     break;
-                case 'database':
-                    // 数据库页面不需要加载数据
+                case 'system':
+                    // 系统管理页面不需要加载数据
                     break;
                 case 'home':
                     // 首页不需要加载数据

@@ -3,7 +3,6 @@ import { contentJson, OpenAPIRoute } from 'chanfana';
 import { z } from 'zod';
 
 import { CommonErrorResponse, CommonSuccessfulResponse } from "../model";
-import { ChannelConfigRow } from "../db/db_model";
 
 // 获取所有 Channel 配置
 export class ChannelGetEndpoint extends OpenAPIRoute {
