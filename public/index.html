@@ -832,13 +832,14 @@
                             </div>
                         </div>
 
+                        <!-- 共用标识字段 -->
+                        <div class="form-group">
+                            <label for="channelKey">频道标识</label>
+                            <input type="text" id="channelKey" class="form-control" placeholder="例如: azure-openai-1">
+                        </div>
+
                         <!-- 表单模式 -->
                         <div id="channelFormMode">
-                            <div class="form-group">
-                                <label for="channelKey">频道标识</label>
-                                <input type="text" id="channelKey" class="form-control"
-                                    placeholder="例如: azure-openai-1">
-                            </div>
                             <div class="form-group">
                                 <label for="channelName">频道名称</label>
                                 <input type="text" id="channelName" class="form-control" placeholder="例如: Azure OpenAI">
@@ -881,11 +882,6 @@
                         <!-- JSON模式 -->
                         <div id="channelJsonMode" style="display: none;">
                             <div class="form-group">
-                                <label for="channelKeyJson">频道标识</label>
-                                <input type="text" id="channelKeyJson" class="form-control"
-                                    placeholder="例如: azure-openai-1">
-                            </div>
-                            <div class="form-group">
                                 <label for="channelValueJson">频道配置 (JSON)</label>
                                 <textarea id="channelValueJson" class="form-control" rows="15"
                                     placeholder='{"name": "Azure OpenAI", "type": "azure-openai", "endpoint": "https://xxx.openai.azure.com/", "api_key": "your-api-key", "api_version": "2024-02-01", "deployment_mapper": {"gpt-35-turbo": "gpt-35-turbo", "gpt-4": "gpt-4"}}'></textarea>
@@ -926,23 +922,25 @@
                             </div>
                         </div>
 
+                        <!-- 共用标识字段 -->
+                        <div class="form-group">
+                            <label for="tokenKey">令牌标识</label>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <input type="text" id="tokenKey" class="form-control" placeholder="输入令牌标识或点击生成">
+                                <div id="tokenKeyActions">
+                                    <button type="button" id="generateTokenBtn" class="btn btn-secondary"
+                                        onclick="generateTokenKey()">🎲 生成</button>
+                                    <button type="button" id="copyTokenBtn" class="btn btn-secondary"
+                                        onclick="copyTokenKey()" style="display: none;">📋 复制</button>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- 表单模式 -->
                         <div id="tokenFormMode">
                             <div class="form-group">
                                 <label for="tokenName">令牌名称</label>
                                 <input type="text" id="tokenName" class="form-control" placeholder="例如: 用户令牌1">
-                            </div>
-                            <div class="form-group">
-                                <label for="tokenKey">令牌标识</label>
-                                <div style="display: flex; gap: 10px; align-items: center;">
-                                    <input type="text" id="tokenKey" class="form-control" placeholder="点击生成令牌" readonly>
-                                    <div id="tokenKeyActions">
-                                        <button type="button" id="generateTokenBtn" class="btn btn-secondary"
-                                            onclick="generateTokenKey()">🎲 生成</button>
-                                        <button type="button" id="copyTokenBtn" class="btn btn-secondary"
-                                            onclick="copyTokenKey()" style="display: none;">📋 复制</button>
-                                    </div>
-                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="channelKeysInput">允许访问的频道</label>
@@ -984,10 +982,6 @@
 
                         <!-- JSON模式 -->
                         <div id="tokenJsonMode" style="display: none;">
-                            <div class="form-group">
-                                <label for="tokenKeyJson">令牌标识</label>
-                                <input type="text" id="tokenKeyJson" class="form-control" placeholder="例如: sk-xxxx">
-                            </div>
                             <div class="form-group">
                                 <label for="tokenValueJson">令牌配置 (JSON)</label>
                                 <textarea id="tokenValueJson" class="form-control" rows="12"
@@ -1116,22 +1110,185 @@
         let currentEditingChannel = null;
         let currentEditingToken = null;
 
+        // === 通用工具函数 ===
+
+        // DOM元素操作工具类
+        const DOMUtils = {
+            // 获取元素并检查是否存在
+            getElement(id) {
+                const element = document.getElementById(id);
+                if (!element) {
+                    console.warn(`Element with id '${id}' not found`);
+                }
+                return element;
+            },
+
+            // 显示/隐藏元素
+            show(elementOrId) {
+                const element = typeof elementOrId === 'string' ? this.getElement(elementOrId) : elementOrId;
+                if (element) element.style.display = 'block';
+            },
+
+            hide(elementOrId) {
+                const element = typeof elementOrId === 'string' ? this.getElement(elementOrId) : elementOrId;
+                if (element) element.style.display = 'none';
+            },
+
+            // 切换class
+            toggleClass(elementOrId, className, force) {
+                const element = typeof elementOrId === 'string' ? this.getElement(elementOrId) : elementOrId;
+                if (element) {
+                    if (force !== undefined) {
+                        element.classList.toggle(className, force);
+                    } else {
+                        element.classList.toggle(className);
+                    }
+                }
+            },
+
+            // 清空输入框
+            clearInput(id) {
+                const element = this.getElement(id);
+                if (element) element.value = '';
+            },
+
+            // 设置输入框值
+            setValue(id, value) {
+                const element = this.getElement(id);
+                if (element) element.value = value || '';
+            },
+
+            // 获取输入框值
+            getValue(id) {
+                const element = this.getElement(id);
+                return element ? element.value.trim() : '';
+            },
+
+            // 聚焦元素
+            focus(id, delay = 0) {
+                const element = this.getElement(id);
+                if (element) {
+                    if (delay > 0) {
+                        setTimeout(() => element.focus(), delay);
+                    } else {
+                        element.focus();
+                    }
+                }
+            }
+        };
+
+        // 表单状态管理工具类
+        const FormUtils = {
+            // 设置输入框为只读状态
+            setReadonly(id, readonly = true) {
+                const element = DOMUtils.getElement(id);
+                if (element) {
+                    element.readOnly = readonly;
+                    element.disabled = readonly;
+                    element.style.cursor = readonly ? 'not-allowed' : 'text';
+                    element.style.backgroundColor = readonly ? '#f8f9fa' : '';
+                    element.placeholder = readonly ? '编辑时不可修改' : element.getAttribute('data-original-placeholder') || '';
+                }
+            },
+
+            // 保存原始placeholder
+            saveOriginalPlaceholder(id) {
+                const element = DOMUtils.getElement(id);
+                if (element && !element.getAttribute('data-original-placeholder')) {
+                    element.setAttribute('data-original-placeholder', element.placeholder);
+                }
+            },
+
+            // 验证必填字段
+            validateRequired(fields) {
+                for (const field of fields) {
+                    const value = DOMUtils.getValue(field.id);
+                    if (!value) {
+                        showAlert(field.message || `请填写${field.name}`, 'error');
+                        return false;
+                    }
+                }
+                return true;
+            },
+
+            // 验证JSON格式
+            validateJSON(jsonString, errorMessage = 'JSON格式错误') {
+                try {
+                    return JSON.parse(jsonString);
+                } catch (error) {
+                    showAlert(errorMessage, 'error');
+                    return null;
+                }
+            }
+        };
+
+        // Tab管理工具类
+        const TabUtils = {
+            // 激活tab
+            activateTab(tabName) {
+                // 隐藏所有tab内容
+                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+                document.querySelectorAll('.tab').forEach(btn => btn.classList.remove('active'));
+
+                // 显示目标tab
+                const targetTab = DOMUtils.getElement(tabName);
+                if (targetTab) targetTab.classList.add('active');
+
+                // 激活对应按钮
+                const targetButton = document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`);
+                if (targetButton) targetButton.classList.add('active');
+            },
+
+            // 设置管理员tabs可见性
+            setAdminTabsVisible(visible = true) {
+                document.querySelectorAll('.admin-only').forEach(tab => {
+                    tab.style.display = visible ? 'block' : 'none';
+                });
+            }
+        };
+
+        // 认证状态管理
+        const AuthManager = {
+            // 检查是否已登录
+            isAuthenticated() {
+                return !!adminToken;
+            },
+
+            // 设置token
+            setToken(token) {
+                adminToken = token;
+                localStorage.setItem('adminToken', token);
+            },
+
+            // 清除token
+            clearToken() {
+                adminToken = '';
+                localStorage.removeItem('adminToken');
+            },
+
+            // 从localStorage恢复token
+            restoreToken() {
+                const savedToken = localStorage.getItem('adminToken');
+                if (savedToken) {
+                    adminToken = savedToken;
+                    return true;
+                }
+                return false;
+            }
+        };
+
         // === 认证相关函数 ===
 
         // 显示登录模态框
         function showLoginModal() {
-            document.getElementById('loginModal').style.display = 'block';
-            // 清空输入框
-            document.getElementById('modalAdminToken').value = '';
-            // 聚焦到输入框
-            setTimeout(() => {
-                document.getElementById('modalAdminToken').focus();
-            }, 100);
+            DOMUtils.show('loginModal');
+            DOMUtils.clearInput('modalAdminToken');
+            DOMUtils.focus('modalAdminToken', 100);
         }
 
         // 关闭登录模态框
         function closeLoginModal() {
-            document.getElementById('loginModal').style.display = 'none';
+            DOMUtils.hide('loginModal');
         }
 
         // 处理模态框登录表单提交
@@ -1142,14 +1299,13 @@
 
         // 模态框身份验证
         function authenticateFromModal() {
-            const token = document.getElementById('modalAdminToken').value;
+            const token = DOMUtils.getValue('modalAdminToken');
             if (!token) {
                 showAlert('请输入管理员令牌', 'error');
                 return;
             }
 
-            adminToken = token;
-            localStorage.setItem('adminToken', token);
+            AuthManager.setToken(token);
             closeLoginModal();
             showMainContent();
             showAlert('登录成功！', 'success');
@@ -1162,27 +1318,19 @@
 
         // 显示主页面（未登录状态）
         function showHomePage() {
-            document.getElementById('authSection').style.display = 'none';
-            document.getElementById('mainContent').style.display = 'block';
-            document.getElementById('logoutSection').style.display = 'none';
-            document.getElementById('mainHeader').classList.add('compact');
+            DOMUtils.hide('authSection');
+            DOMUtils.show('mainContent');
+            DOMUtils.hide('logoutSection');
+            DOMUtils.toggleClass('mainHeader', 'compact', true);
 
             // 显示登录提示
-            document.getElementById('loginPrompt').style.display = 'block';
+            DOMUtils.show('loginPrompt');
 
             // 隐藏管理员专用的tabs
-            const adminTabs = document.querySelectorAll('.admin-only');
-            adminTabs.forEach(tab => tab.style.display = 'none');
-
-            // 确保首页tab是激活状态，先隐藏所有tab内容
-            const allTabs = document.querySelectorAll('.tab-content');
-            allTabs.forEach(tab => tab.classList.remove('active'));
-            const allTabButtons = document.querySelectorAll('.tab');
-            allTabButtons.forEach(btn => btn.classList.remove('active'));
+            TabUtils.setAdminTabsVisible(false);
 
             // 激活首页tab
-            document.getElementById('home').classList.add('active');
-            document.querySelector('.tab[onclick="switchTab(\'home\')"]').classList.add('active');
+            TabUtils.activateTab('home');
         }
 
         // 处理登录表单提交（支持回车键）
@@ -1193,40 +1341,31 @@
 
         // Authentication
         function authenticate() {
-            const token = document.getElementById('adminToken').value;
+            const token = DOMUtils.getValue('adminToken');
             if (!token) {
                 showAlert('请输入管理员令牌', 'error');
                 return;
             }
 
-            adminToken = token;
-            localStorage.setItem('adminToken', token);
+            AuthManager.setToken(token);
             showMainContent();
         }
 
         // 显示主内容区域（已登录状态）
         function showMainContent() {
-            document.getElementById('authSection').style.display = 'none';
-            document.getElementById('mainContent').style.display = 'block';
-            document.getElementById('logoutSection').style.display = 'block';
-            document.getElementById('mainHeader').classList.add('compact');
+            DOMUtils.hide('authSection');
+            DOMUtils.show('mainContent');
+            DOMUtils.show('logoutSection');
+            DOMUtils.toggleClass('mainHeader', 'compact', true);
 
             // 隐藏登录提示
-            document.getElementById('loginPrompt').style.display = 'none';
+            DOMUtils.hide('loginPrompt');
 
             // 显示管理员专用的tabs
-            const adminTabs = document.querySelectorAll('.admin-only');
-            adminTabs.forEach(tab => tab.style.display = 'block');
-
-            // 确保首页tab是激活状态，先隐藏所有tab内容
-            const allTabs = document.querySelectorAll('.tab-content');
-            allTabs.forEach(tab => tab.classList.remove('active'));
-            const allTabButtons = document.querySelectorAll('.tab');
-            allTabButtons.forEach(btn => btn.classList.remove('active'));
+            TabUtils.setAdminTabsVisible(true);
 
             // 激活首页tab
-            document.getElementById('home').classList.add('active');
-            document.querySelector('.tab[onclick="switchTab(\'home\')"]').classList.add('active');
+            TabUtils.activateTab('home');
         }
 
         // 确认退出登录
@@ -1238,10 +1377,9 @@
 
         // 退出登录
         function logout() {
-            localStorage.removeItem('adminToken');
-            adminToken = '';
+            AuthManager.clearToken();
             showHomePage();
-            document.getElementById('adminToken').value = '';
+            DOMUtils.clearInput('adminToken');
             showAlert('已退出登录', 'success');
         }
 
@@ -1249,7 +1387,7 @@
         function switchTab(tabName) {
             // 检查是否为管理员专用tab且用户未登录
             const adminOnlyTabs = ['system', 'channels', 'tokens', 'pricing', 'api-test'];
-            if (adminOnlyTabs.includes(tabName) && !adminToken) {
+            if (adminOnlyTabs.includes(tabName) && !AuthManager.isAuthenticated()) {
                 showAlert('请先登录后再访问管理功能', 'error');
                 return;
             }
@@ -1261,45 +1399,19 @@
                 showTokenList();
             }
 
-            // Hide all tabs
-            const tabs = document.querySelectorAll('.tab-content');
-            tabs.forEach(tab => tab.classList.remove('active'));
-
-            const tabButtons = document.querySelectorAll('.tab');
-            tabButtons.forEach(btn => btn.classList.remove('active'));
-
-            // Show selected tab
-            const targetTab = document.getElementById(tabName);
-            if (targetTab) {
-                targetTab.classList.add('active');
-            }
-
-            // 找到对应的tab按钮并激活
-            const targetTabButton = document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`);
-            if (targetTabButton) {
-                targetTabButton.classList.add('active');
-            }
+            // 激活tab
+            TabUtils.activateTab(tabName);
 
             // 切换tab时重新获取数据
-            switch (tabName) {
-                case 'channels':
-                    loadChannels();
-                    break;
-                case 'tokens':
-                    loadTokens();
-                    break;
-                case 'pricing':
-                    loadPricing();
-                    break;
-                case 'api-test':
-                    // API测试页面不需要加载数据
-                    break;
-                case 'system':
-                    // 系统管理页面不需要加载数据
-                    break;
-                case 'home':
-                    // 首页不需要加载数据
-                    break;
+            const tabDataLoaders = {
+                'channels': loadChannels,
+                'tokens': loadTokens,
+                'pricing': loadPricing
+            };
+
+            const loader = tabDataLoaders[tabName];
+            if (loader) {
+                loader();
             }
         }
 
@@ -1339,8 +1451,7 @@
                 }
 
                 // 返回实际数据，如果有 data 字段则返回 data，否则返回整个结果
-                const finalData = result.data !== undefined ? result.data : result;
-                return finalData;
+                return result.data !== undefined ? result.data : result;
             } catch (error) {
                 console.error('API Error:', error);
                 throw error;
@@ -1362,94 +1473,146 @@
             }
         }
 
+        // === 表单编辑模式管理 ===
+
+        // 编辑模式管理类
+        class EditModeManager {
+            constructor(formModeId, jsonModeId, toggleBtnId, formModeText, jsonModeText) {
+                this.formModeElement = DOMUtils.getElement(formModeId);
+                this.jsonModeElement = DOMUtils.getElement(jsonModeId);
+                this.toggleBtn = DOMUtils.getElement(toggleBtnId);
+                this.formModeText = formModeText;
+                this.jsonModeText = jsonModeText;
+                this.currentMode = 'form';
+            }
+
+            // 切换编辑模式
+            toggle(formToJsonConverter, jsonToFormConverter) {
+                if (this.currentMode === 'form') {
+                    this._switchToJsonMode(formToJsonConverter);
+                } else {
+                    this._switchToFormMode(jsonToFormConverter);
+                }
+            }
+
+            _switchToJsonMode(converter) {
+                if (converter) {
+                    const data = converter();
+                    if (data && this.jsonModeElement) {
+                        const textarea = this.jsonModeElement.querySelector('textarea');
+                        if (textarea) {
+                            textarea.value = JSON.stringify(data, null, 2);
+                        }
+                    }
+                }
+
+                DOMUtils.hide(this.formModeElement);
+                DOMUtils.show(this.jsonModeElement);
+                if (this.toggleBtn) this.toggleBtn.textContent = this.formModeText;
+                this.currentMode = 'json';
+            }
+
+            _switchToFormMode(converter) {
+                if (converter) {
+                    try {
+                        const textarea = this.jsonModeElement?.querySelector('textarea');
+                        const jsonValue = textarea?.value;
+                        if (jsonValue) {
+                            const parsed = JSON.parse(jsonValue);
+                            converter(parsed);
+                        }
+                    } catch (error) {
+                        console.warn('JSON格式错误，无法转换到表单模式:', error);
+                    }
+                }
+
+                DOMUtils.show(this.formModeElement);
+                DOMUtils.hide(this.jsonModeElement);
+                if (this.toggleBtn) this.toggleBtn.textContent = this.jsonModeText;
+                this.currentMode = 'form';
+            }
+
+            // 重置到表单模式
+            resetToFormMode() {
+                this.currentMode = 'form';
+                DOMUtils.show(this.formModeElement);
+                DOMUtils.hide(this.jsonModeElement);
+                if (this.toggleBtn) this.toggleBtn.textContent = this.jsonModeText;
+            }
+
+            // 获取当前模式
+            getCurrentMode() {
+                return this.currentMode;
+            }
+        }
+
         // === CHANNEL FUNCTIONS ===
 
         // 全局变量跟踪编辑模式
-        let channelEditMode = 'form'; // 'form' 或 'json'
-        let tokenEditMode = 'form'; // 'form' 或 'json'
-        let pricingEditMode = 'table'; // 'table' 或 'json'
+        let channelEditMode = 'form';
+        let tokenEditMode = 'form';
+        let pricingEditMode = 'table';
+
+        // 创建频道编辑模式管理器
+        const channelModeManager = new EditModeManager(
+            'channelFormMode',
+            'channelJsonMode',
+            'channelModeToggle',
+            '📋 切换到表单模式',
+            '📝 切换到JSON模式'
+        );
 
         // 切换频道编辑模式
         function toggleChannelEditMode() {
-            const formMode = document.getElementById('channelFormMode');
-            const jsonMode = document.getElementById('channelJsonMode');
-            const toggleBtn = document.getElementById('channelModeToggle');
-
-            if (channelEditMode === 'form') {
-                // 切换到JSON模式
-                // 先从表单收集数据转换为JSON
-                const formData = collectChannelFormData();
-                if (formData) {
-                    const key = document.getElementById('channelKey').value;
-                    document.getElementById('channelKeyJson').value = key;
-                    document.getElementById('channelValueJson').value = JSON.stringify(formData, null, 2);
+            channelModeManager.toggle(
+                collectChannelFormData,
+                (parsed) => {
+                    const key = DOMUtils.getValue('channelKey');
+                    fillChannelForm(key, parsed);
                 }
-
-                formMode.style.display = 'none';
-                jsonMode.style.display = 'block';
-                toggleBtn.textContent = '📋 切换到表单模式';
-                channelEditMode = 'json';
-            } else {
-                // 切换到表单模式
-                // 先从JSON收集数据填充到表单
-                try {
-                    const key = document.getElementById('channelKeyJson').value;
-                    const jsonValue = document.getElementById('channelValueJson').value;
-                    if (jsonValue) {
-                        const parsed = JSON.parse(jsonValue);
-                        fillChannelForm(key, parsed);
-                    }
-                } catch (error) {
-                    console.warn('JSON格式错误，无法转换到表单模式:', error);
-                }
-
-                formMode.style.display = 'block';
-                jsonMode.style.display = 'none';
-                toggleBtn.textContent = '📝 切换到JSON模式';
-                channelEditMode = 'form';
-            }
+            );
+            channelEditMode = channelModeManager.getCurrentMode();
         }
 
         // 收集频道表单数据
         function collectChannelFormData() {
-            const name = document.getElementById('channelName').value.trim();
-            const type = document.getElementById('channelType').value.trim();
-            const endpoint = document.getElementById('channelEndpoint').value.trim();
-            const apiKey = document.getElementById('channelApiKey').value.trim();
-            const apiVersion = document.getElementById('channelApiVersion').value.trim();
-            const deploymentMapperText = document.getElementById('deploymentMapper').value.trim();
-            const additionalConfigText = document.getElementById('additionalConfig').value.trim();
+            const requiredFields = [
+                { id: 'channelName', name: '频道名称' },
+                { id: 'channelEndpoint', name: 'API端点' },
+                { id: 'channelApiKey', name: 'API密钥' }
+            ];
 
-            if (!name || !endpoint || !apiKey) {
-                return null;
+            // 检查必填字段
+            for (const field of requiredFields) {
+                if (!DOMUtils.getValue(field.id)) {
+                    return null;
+                }
             }
 
             const config = {
-                name: name,
-                type: type,
-                endpoint: endpoint,
-                api_key: apiKey
+                name: DOMUtils.getValue('channelName'),
+                type: DOMUtils.getValue('channelType'),
+                endpoint: DOMUtils.getValue('channelEndpoint'),
+                api_key: DOMUtils.getValue('channelApiKey')
             };
 
+            // 可选字段
+            const apiVersion = DOMUtils.getValue('channelApiVersion');
             if (apiVersion) {
                 config.api_version = apiVersion;
             }
 
+            // 处理JSON字段
+            const deploymentMapperText = DOMUtils.getValue('deploymentMapper');
             if (deploymentMapperText) {
-                try {
-                    config.deployment_mapper = JSON.parse(deploymentMapperText);
-                } catch (error) {
-                    console.warn('部署映射JSON格式错误:', error);
-                }
+                const parsed = FormUtils.validateJSON(deploymentMapperText, '部署映射JSON格式错误');
+                if (parsed) config.deployment_mapper = parsed;
             }
 
+            const additionalConfigText = DOMUtils.getValue('additionalConfig');
             if (additionalConfigText) {
-                try {
-                    const additionalConfig = JSON.parse(additionalConfigText);
-                    Object.assign(config, additionalConfig);
-                } catch (error) {
-                    console.warn('其他配置JSON格式错误:', error);
-                }
+                const parsed = FormUtils.validateJSON(additionalConfigText, '其他配置JSON格式错误');
+                if (parsed) Object.assign(config, parsed);
             }
 
             return config;
@@ -1457,61 +1620,62 @@
 
         // 填充频道表单
         function fillChannelForm(key, config) {
-            document.getElementById('channelKey').value = key;
-            document.getElementById('channelName').value = config.name || '';
-            document.getElementById('channelType').value = config.type || '';
-            document.getElementById('channelEndpoint').value = config.endpoint || '';
-            document.getElementById('channelApiKey').value = config.api_key || '';
-            document.getElementById('channelApiVersion').value = config.api_version || '';
+            const fieldMappings = [
+                { id: 'channelKey', value: key },
+                { id: 'channelName', value: config.name },
+                { id: 'channelType', value: config.type },
+                { id: 'channelEndpoint', value: config.endpoint },
+                { id: 'channelApiKey', value: config.api_key },
+                { id: 'channelApiVersion', value: config.api_version }
+            ];
 
+            fieldMappings.forEach(field => DOMUtils.setValue(field.id, field.value));
+
+            // 处理特殊字段
             if (config.deployment_mapper) {
-                document.getElementById('deploymentMapper').value = JSON.stringify(config.deployment_mapper, null, 2);
+                DOMUtils.setValue('deploymentMapper', JSON.stringify(config.deployment_mapper, null, 2));
             } else {
-                document.getElementById('deploymentMapper').value = '';
+                DOMUtils.clearInput('deploymentMapper');
             }
 
             // 处理其他配置
             const additionalConfig = { ...config };
-            delete additionalConfig.name;
-            delete additionalConfig.type;
-            delete additionalConfig.endpoint;
-            delete additionalConfig.api_key;
-            delete additionalConfig.api_version;
-            delete additionalConfig.deployment_mapper;
+            ['name', 'type', 'endpoint', 'api_key', 'api_version', 'deployment_mapper'].forEach(key => {
+                delete additionalConfig[key];
+            });
 
             if (Object.keys(additionalConfig).length > 0) {
-                document.getElementById('additionalConfig').value = JSON.stringify(additionalConfig, null, 2);
+                DOMUtils.setValue('additionalConfig', JSON.stringify(additionalConfig, null, 2));
             } else {
-                document.getElementById('additionalConfig').value = '';
+                DOMUtils.clearInput('additionalConfig');
             }
         }
 
         // 切换API版本字段的显示状态
         function toggleApiVersionField() {
-            const channelType = document.getElementById('channelType').value;
-            const apiVersionGroup = document.getElementById('apiVersionGroup');
+            const channelType = DOMUtils.getValue('channelType');
+            const apiVersionGroup = DOMUtils.getElement('apiVersionGroup');
 
             if (channelType === 'azure-openai') {
-                apiVersionGroup.style.display = 'block';
+                DOMUtils.show(apiVersionGroup);
             } else {
-                apiVersionGroup.style.display = 'none';
-                // 隐藏时清空API版本字段
-                document.getElementById('channelApiVersion').value = '';
+                DOMUtils.hide(apiVersionGroup);
+                DOMUtils.clearInput('channelApiVersion');
             }
         }
 
         // 显示频道列表
         function showChannelList() {
-            document.getElementById('channelListView').style.display = 'block';
-            document.getElementById('channelFormView').style.display = 'none';
+            DOMUtils.show('channelListView');
+            DOMUtils.hide('channelFormView');
             currentEditingChannel = null;
         }
 
         // 显示频道表单
         function showChannelForm(isEdit = false) {
-            document.getElementById('channelListView').style.display = 'none';
-            document.getElementById('channelFormView').style.display = 'block';
-            document.getElementById('channelFormTitle').textContent = isEdit ? '编辑频道' : '添加频道';
+            DOMUtils.hide('channelListView');
+            DOMUtils.show('channelFormView');
+            DOMUtils.setValue('channelFormTitle', isEdit ? '编辑频道' : '添加频道');
 
             if (!isEdit) {
                 clearChannelForm();
@@ -1520,27 +1684,23 @@
 
         // 清空频道表单
         function clearChannelForm() {
-            // 清空表单模式字段
-            document.getElementById('channelKey').value = '';
-            document.getElementById('channelName').value = '';
-            document.getElementById('channelType').value = 'azure-openai'; // 默认设置为 azure-openai
-            document.getElementById('channelEndpoint').value = '';
-            document.getElementById('channelApiKey').value = '';
-            document.getElementById('channelApiVersion').value = '';
-            document.getElementById('deploymentMapper').value = '';
-            document.getElementById('additionalConfig').value = '';
-            document.getElementById('channelKey').disabled = false;
+            // 清空所有输入字段
+            const fieldIds = [
+                'channelKey', 'channelName', 'channelEndpoint',
+                'channelApiKey', 'channelApiVersion', 'deploymentMapper',
+                'additionalConfig', 'channelValueJson'
+            ];
 
-            // 清空JSON模式字段
-            document.getElementById('channelKeyJson').value = '';
-            document.getElementById('channelValueJson').value = '';
+            fieldIds.forEach(id => DOMUtils.clearInput(id));
 
-            // 重置到表单模式
-            document.getElementById('channelFormMode').style.display = 'block';
-            document.getElementById('channelJsonMode').style.display = 'none';
-            document.getElementById('channelModeToggle').textContent = '📝 切换到JSON模式';
+            // 重置表单状态
+            FormUtils.setReadonly('channelKey', false);
+            DOMUtils.setValue('channelType', 'azure-openai');
+            DOMUtils.getElement('channelKey').placeholder = '例如: azure-openai-1';
+
+            // 重置编辑模式
+            channelModeManager.resetToFormMode();
             channelEditMode = 'form';
-
             currentEditingChannel = null;
 
             // 确保API版本字段根据类型正确显示
@@ -1551,68 +1711,52 @@
         function editChannelFromList(key, originalValue) {
             currentEditingChannel = key;
 
-            try {
-                const parsed = JSON.parse(originalValue);
+            const parsed = FormUtils.validateJSON(originalValue, '频道配置格式错误');
+            if (!parsed) return;
 
-                if (channelEditMode === 'form') {
-                    // 表单模式
-                    fillChannelForm(key, parsed);
-                    document.getElementById('channelKey').disabled = true; // 编辑时不允许修改key
-                } else {
-                    // JSON模式
-                    document.getElementById('channelKeyJson').value = key;
-                    document.getElementById('channelValueJson').value = JSON.stringify(parsed, null, 2);
-                }
+            // 设置key字段为只读
+            FormUtils.saveOriginalPlaceholder('channelKey');
+            FormUtils.setReadonly('channelKey', true);
+            DOMUtils.setValue('channelKey', key);
 
-                // 确保API版本字段根据类型正确显示
-                toggleApiVersionField();
-                showChannelForm(true);
-            } catch (error) {
-                console.error('解析频道配置失败:', error);
-                showAlert('频道配置格式错误', 'error');
+            if (channelEditMode === 'form') {
+                fillChannelForm(key, parsed);
+            } else {
+                DOMUtils.setValue('channelValueJson', JSON.stringify(parsed, null, 2));
             }
+
+            toggleApiVersionField();
+            showChannelForm(true);
         }
 
         // 保存频道
         async function saveChannel() {
-            let key, config;
+            const key = DOMUtils.getValue('channelKey');
+            if (!key) {
+                showAlert('请填写频道标识', 'error');
+                return;
+            }
 
+            let config;
             if (channelEditMode === 'form') {
-                // 表单模式
-                key = document.getElementById('channelKey').value.trim();
                 config = collectChannelFormData();
-
                 if (!config) {
                     showAlert('请填写所有必填字段（频道名称、端点、API密钥）', 'error');
                     return;
                 }
-
-                if (!key) {
-                    showAlert('请填写频道标识', 'error');
-                    return;
-                }
             } else {
-                // JSON模式
-                key = document.getElementById('channelKeyJson').value.trim();
-                const jsonValue = document.getElementById('channelValueJson').value.trim();
-
-                if (!key || !jsonValue) {
-                    showAlert('请填写频道标识和配置JSON', 'error');
+                const jsonValue = DOMUtils.getValue('channelValueJson');
+                if (!jsonValue) {
+                    showAlert('请填写配置JSON', 'error');
                     return;
                 }
-
-                try {
-                    config = JSON.parse(jsonValue);
-                } catch (error) {
-                    showAlert('JSON格式错误，请检查配置格式', 'error');
-                    return;
-                }
+                config = FormUtils.validateJSON(jsonValue, 'JSON格式错误，请检查配置格式');
+                if (!config) return;
             }
 
             try {
                 await apiRequest(`/api/admin/channel/${encodeURIComponent(key)}`, 'POST', config, true, '正在保存频道...');
                 showAlert('频道保存成功！', 'success');
-
                 clearChannelForm();
                 showChannelList();
                 loadChannels();
@@ -1627,7 +1771,7 @@
                 const channels = await apiRequest('/api/admin/channel', 'GET', null, true);
                 displayChannels(channels);
             } catch (error) {
-                document.getElementById('channelsList').innerHTML = `<div class="alert alert-error">加载频道失败: ${error.message}</div>`;
+                DOMUtils.getElement('channelsList').innerHTML = `<div class="alert alert-error">加载频道失败: ${error.message}</div>`;
             }
         }
 
@@ -1643,8 +1787,10 @@
             }
         }
 
+        // 显示频道列表的通用函数
         function displayChannels(channels) {
-            const container = document.getElementById('channelsList');
+            const container = DOMUtils.getElement('channelsList');
+            if (!container) return;
 
             // 处理空数据的情况
             if (!channels || !Array.isArray(channels) || channels.length === 0) {
@@ -1655,18 +1801,22 @@
             container.innerHTML = channels.map(item => {
                 let parsedValue = {};
                 try {
-                    // 解析 value 字段中的 JSON 字符串
                     parsedValue = JSON.parse(item.value);
                 } catch {
                     parsedValue = { name: 'Invalid JSON', type: 'azure-openai', endpoint: '' };
                 }
 
+                const name = parsedValue.name || 'No name';
+                const type = parsedValue.type || 'Unknown';
+                const endpoint = (parsedValue.endpoint || '');
+                const endpointDisplay = endpoint.length > 50 ? endpoint.substring(0, 50) + '...' : endpoint;
+
                 return `
                     <div class="item">
                         <div class="item-info">
-                            <div class="item-key">${parsedValue.name || 'No name'}</div>
+                            <div class="item-key">${name}</div>
                             <div class="item-details">
-                                ${item.key || 'Unknown'} | 类型: ${parsedValue.type || 'Unknown'} | 端点: ${(parsedValue.endpoint || '').substring(0, 50)}${(parsedValue.endpoint || '').length > 50 ? '...' : ''}
+                                ${item.key || 'Unknown'} | 类型: ${type} | 端点: ${endpointDisplay}
                             </div>
                         </div>
                         <div class="actions">
@@ -1680,264 +1830,216 @@
 
         // === TOKEN FUNCTIONS ===
 
+        // 创建令牌编辑模式管理器
+        const tokenModeManager = new EditModeManager(
+            'tokenFormMode',
+            'tokenJsonMode',
+            'tokenModeToggle',
+            '📋 切换到表单模式',
+            '📝 切换到JSON模式'
+        );
+
         // 切换令牌编辑模式
         function toggleTokenEditMode() {
-            const formMode = document.getElementById('tokenFormMode');
-            const jsonMode = document.getElementById('tokenJsonMode');
-            const toggleBtn = document.getElementById('tokenModeToggle');
-
-            if (tokenEditMode === 'form') {
-                // 切换到JSON模式
-                const formData = collectTokenFormData();
-                if (formData.key) {
-                    document.getElementById('tokenKeyJson').value = formData.key;
-                    delete formData.key; // 从配置中移除key
-                    document.getElementById('tokenValueJson').value = JSON.stringify(formData, null, 2);
+            tokenModeManager.toggle(
+                () => {
+                    const formData = collectTokenFormData();
+                    delete formData.key; // 从配置中移除key，因为key现在是共用的
+                    return formData;
+                },
+                (parsed) => {
+                    const key = DOMUtils.getValue('tokenKey');
+                    fillTokenForm(key, parsed);
                 }
-
-                formMode.style.display = 'none';
-                jsonMode.style.display = 'block';
-                toggleBtn.textContent = '📋 切换到表单模式';
-                tokenEditMode = 'json';
-            } else {
-                // 切换到表单模式
-                try {
-                    const key = document.getElementById('tokenKeyJson').value;
-                    const jsonValue = document.getElementById('tokenValueJson').value;
-                    if (jsonValue) {
-                        const parsed = JSON.parse(jsonValue);
-                        fillTokenForm(key, parsed);
-                    }
-                } catch (error) {
-                    console.warn('JSON格式错误，无法转换到表单模式:', error);
-                }
-
-                formMode.style.display = 'block';
-                jsonMode.style.display = 'none';
-                toggleBtn.textContent = '📝 切换到JSON模式';
-                tokenEditMode = 'form';
-            }
+            );
+            tokenEditMode = tokenModeManager.getCurrentMode();
         }
 
         // 收集令牌表单数据
         function collectTokenFormData() {
-            const name = document.getElementById('tokenName').value.trim();
-            const key = document.getElementById('tokenKey').value.trim();
-            const channelKeysInput = document.getElementById('channelKeysInput').value.trim();
-            const totalQuotaInput = document.getElementById('totalQuotaInput').value.trim();
-
+            const channelKeysInput = DOMUtils.getValue('channelKeysInput');
             const channelKeys = channelKeysInput
                 ? channelKeysInput.split(',').map(key => key.trim()).filter(key => key.length > 0)
                 : [];
 
             return {
-                key: key,
-                name: name,
+                key: DOMUtils.getValue('tokenKey'),
+                name: DOMUtils.getValue('tokenName'),
                 channel_keys: channelKeys,
-                total_quota: totalQuotaInput ? parseFloat(totalQuotaInput) : 0
+                total_quota: parseFloat(DOMUtils.getValue('totalQuotaInput')) || 0
             };
         }
 
         // 填充令牌表单
         function fillTokenForm(key, config) {
-            document.getElementById('tokenName').value = config.name || '';
-            document.getElementById('tokenKey').value = key;
+            DOMUtils.setValue('tokenName', config.name);
+            DOMUtils.setValue('tokenKey', key);
 
             const channelKeysStr = config.channel_keys && Array.isArray(config.channel_keys)
                 ? config.channel_keys.join(', ')
                 : '';
-            document.getElementById('channelKeysInput').value = channelKeysStr;
-            document.getElementById('totalQuotaInput').value = config.total_quota || '';
+            DOMUtils.setValue('channelKeysInput', channelKeysStr);
+            DOMUtils.setValue('totalQuotaInput', config.total_quota);
+        }
+
+        // Token按钮状态管理类
+        class TokenButtonManager {
+            static setEditMode(isEdit) {
+                const tokenKeyInput = DOMUtils.getElement('tokenKey');
+                const generateBtn = DOMUtils.getElement('generateTokenBtn');
+                const copyBtn = DOMUtils.getElement('copyTokenBtn');
+
+                if (isEdit) {
+                    // 编辑模式：只显示复制按钮，token key 不可编辑
+                    FormUtils.setReadonly('tokenKey', true);
+                    DOMUtils.hide(generateBtn);
+                    DOMUtils.show(copyBtn);
+                } else {
+                    // 创建模式：显示生成按钮，token key 可编辑
+                    FormUtils.setReadonly('tokenKey', false);
+                    DOMUtils.show(generateBtn);
+                    DOMUtils.hide(copyBtn);
+                    if (tokenKeyInput) {
+                        tokenKeyInput.placeholder = '输入令牌标识或点击生成';
+                    }
+                }
+            }
         }
 
         // 显示令牌列表
         function showTokenList() {
-            document.getElementById('tokenListView').style.display = 'block';
-            document.getElementById('tokenFormView').style.display = 'none';
+            DOMUtils.show('tokenListView');
+            DOMUtils.hide('tokenFormView');
             currentEditingToken = null;
         }
 
         // 显示令牌表单
         function showTokenForm(isEdit = false) {
-            document.getElementById('tokenListView').style.display = 'none';
-            document.getElementById('tokenFormView').style.display = 'block';
-            document.getElementById('tokenFormTitle').textContent = isEdit ? '编辑令牌' : '添加令牌';
+            DOMUtils.hide('tokenListView');
+            DOMUtils.show('tokenFormView');
 
-            // 根据是否为编辑模式控制按钮显示
-            const tokenKeyActions = document.getElementById('tokenKeyActions');
-            const tokenKeyInput = document.getElementById('tokenKey');
-            const generateBtn = document.getElementById('generateTokenBtn');
-            const copyBtn = document.getElementById('copyTokenBtn');
+            const titleElement = DOMUtils.getElement('tokenFormTitle');
+            if (titleElement) titleElement.textContent = isEdit ? '编辑令牌' : '添加令牌';
 
-            if (isEdit) {
-                // 编辑模式：只显示复制按钮，token key 为只读
-                tokenKeyActions.style.display = 'flex';
-                generateBtn.style.display = 'none';
-                copyBtn.style.display = 'inline-block';
-                tokenKeyInput.style.cursor = 'not-allowed';
-                tokenKeyInput.placeholder = '编辑时不可修改';
-            } else {
-                // 创建模式：只显示生成按钮，token key 可操作
-                tokenKeyActions.style.display = 'flex';
-                generateBtn.style.display = 'inline-block';
-                copyBtn.style.display = 'none';
-                tokenKeyInput.style.cursor = 'text';
-                tokenKeyInput.placeholder = '点击生成令牌';
+            TokenButtonManager.setEditMode(isEdit);
+
+            if (!isEdit) {
                 clearTokenForm();
-                // 自动生成token标识
-                generateTokenKey();
+                generateTokenKey(); // 自动生成token标识
             }
         }
 
         // 清空令牌表单
         function clearTokenForm() {
-            // 清空表单模式字段
-            document.getElementById('tokenName').value = '';
-            document.getElementById('tokenKey').value = '';
-            document.getElementById('channelKeysInput').value = '';
-            document.getElementById('totalQuotaInput').value = '';
-
-            // 清空JSON模式字段
-            document.getElementById('tokenKeyJson').value = '';
-            document.getElementById('tokenValueJson').value = '';
+            // 清空所有字段
+            const fieldIds = ['tokenName', 'channelKeysInput', 'totalQuotaInput', 'tokenValueJson'];
+            fieldIds.forEach(id => DOMUtils.clearInput(id));
 
             // 重置token key输入框状态
-            const tokenKeyInput = document.getElementById('tokenKey');
-            const tokenKeyActions = document.getElementById('tokenKeyActions');
-            const generateBtn = document.getElementById('generateTokenBtn');
-            const copyBtn = document.getElementById('copyTokenBtn');
+            FormUtils.saveOriginalPlaceholder('tokenKey');
+            FormUtils.setReadonly('tokenKey', false);
+            DOMUtils.clearInput('tokenKey');
 
-            tokenKeyInput.disabled = false;
-            tokenKeyInput.style.cursor = 'text';
-            tokenKeyInput.placeholder = '点击生成令牌';
-            tokenKeyActions.style.display = 'flex';
-            generateBtn.style.display = 'inline-block';
-            copyBtn.style.display = 'none';
+            const tokenKeyInput = DOMUtils.getElement('tokenKey');
+            if (tokenKeyInput) {
+                tokenKeyInput.placeholder = '输入令牌标识或点击生成';
+            }
 
-            // 重置到表单模式
-            document.getElementById('tokenFormMode').style.display = 'block';
-            document.getElementById('tokenJsonMode').style.display = 'none';
-            document.getElementById('tokenModeToggle').textContent = '📝 切换到JSON模式';
+            // 重置编辑模式
+            tokenModeManager.resetToFormMode();
             tokenEditMode = 'form';
-
             currentEditingToken = null;
         }
 
         // 生成token key
         function generateTokenKey() {
-            // 生成32位随机字符串
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
             let result = 'sk-';
             for (let i = 0; i < 48; i++) {
                 result += chars.charAt(Math.floor(Math.random() * chars.length));
             }
-            document.getElementById('tokenKey').value = result;
+            DOMUtils.setValue('tokenKey', result);
         }
 
         // 复制token key
         function copyTokenKey() {
-            const tokenKeyInput = document.getElementById('tokenKey');
-            if (!tokenKeyInput.value) {
+            const tokenKey = DOMUtils.getValue('tokenKey');
+            if (!tokenKey) {
                 showAlert('请先生成令牌标识', 'error');
                 return;
             }
-
-            navigator.clipboard.writeText(tokenKeyInput.value).then(() => {
-                showAlert('令牌标识已复制到剪贴板', 'success', 2000);
-            }).catch(() => {
-                // 降级方案
-                tokenKeyInput.select();
-                document.execCommand('copy');
-                showAlert('令牌标识已复制到剪贴板', 'success', 2000);
-            });
+            copyToClipboard(tokenKey);
         }
 
         // 设置配额值
         function setQuotaValue(value) {
-            document.getElementById('totalQuotaInput').value = value;
+            DOMUtils.setValue('totalQuotaInput', value);
         }
 
-        // 从列表编辑令牌（处理原始value字符串）
+        // 从列表编辑令牌
         function editTokenFromList(key, originalValue) {
             currentEditingToken = key;
 
-            try {
-                const parsed = JSON.parse(originalValue);
+            const parsed = FormUtils.validateJSON(originalValue, '令牌配置格式错误');
+            if (!parsed) return;
 
-                if (tokenEditMode === 'form') {
-                    // 表单模式
-                    fillTokenForm(key, parsed);
+            // 设置key字段状态
+            FormUtils.saveOriginalPlaceholder('tokenKey');
+            FormUtils.setReadonly('tokenKey', true);
+            DOMUtils.setValue('tokenKey', key);
 
-                    // 设置编辑模式的UI状态
-                    const tokenKeyInput = document.getElementById('tokenKey');
-                    const tokenKeyActions = document.getElementById('tokenKeyActions');
-                    const generateBtn = document.getElementById('generateTokenBtn');
-                    const copyBtn = document.getElementById('copyTokenBtn');
-
-                    tokenKeyInput.disabled = true; // 编辑时不允许修改key
-                    tokenKeyInput.style.cursor = 'not-allowed';
-                    tokenKeyInput.placeholder = '编辑时不可修改';
-                    tokenKeyActions.style.display = 'flex';
-                    generateBtn.style.display = 'none'; // 隐藏生成按钮
-                    copyBtn.style.display = 'inline-block'; // 显示复制按钮
-                } else {
-                    // JSON模式
-                    document.getElementById('tokenKeyJson').value = key;
-                    document.getElementById('tokenValueJson').value = JSON.stringify(parsed, null, 2);
-                }
-
-                showTokenForm(true);
-            } catch (error) {
-                console.error('解析令牌配置失败:', error);
-                showAlert('令牌配置格式错误', 'error');
+            // 根据模式填充数据
+            if (tokenEditMode === 'form') {
+                fillTokenForm(key, parsed);
+            } else {
+                DOMUtils.setValue('tokenValueJson', JSON.stringify(parsed, null, 2));
             }
+
+            TokenButtonManager.setEditMode(true);
+            showTokenForm(true);
         }
 
         // 保存令牌
         async function saveToken() {
-            let key, config;
+            const key = DOMUtils.getValue('tokenKey');
+            if (!key) {
+                showAlert('请填写令牌标识', 'error');
+                return;
+            }
 
+            let config;
             if (tokenEditMode === 'form') {
-                // 表单模式
                 const formData = collectTokenFormData();
-                key = formData.key;
                 config = {
                     name: formData.name,
                     channel_keys: formData.channel_keys,
                     total_quota: formData.total_quota
                 };
 
-                if (!formData.name || !key || !formData.total_quota) {
-                    showAlert('请填写令牌名称、令牌标识和总配额', 'error');
+                // 验证必填字段
+                if (!FormUtils.validateRequired([
+                    { id: 'tokenName', name: '令牌名称', message: '请填写令牌名称' }
+                ])) {
                     return;
                 }
 
-                if (isNaN(formData.total_quota) || formData.total_quota < 0) {
+                if (!formData.total_quota || isNaN(formData.total_quota) || formData.total_quota < 0) {
                     showAlert('请输入有效的总配额数值', 'error');
                     return;
                 }
             } else {
-                // JSON模式
-                key = document.getElementById('tokenKeyJson').value.trim();
-                const jsonValue = document.getElementById('tokenValueJson').value.trim();
-
-                if (!key || !jsonValue) {
-                    showAlert('请填写令牌标识和配置JSON', 'error');
+                const jsonValue = DOMUtils.getValue('tokenValueJson');
+                if (!jsonValue) {
+                    showAlert('请填写配置JSON', 'error');
                     return;
                 }
-
-                try {
-                    config = JSON.parse(jsonValue);
-                } catch (error) {
-                    showAlert('JSON格式错误，请检查配置格式', 'error');
-                    return;
-                }
+                config = FormUtils.validateJSON(jsonValue, 'JSON格式错误，请检查配置格式');
+                if (!config) return;
             }
 
             try {
                 await apiRequest(`/api/admin/token/${encodeURIComponent(key)}`, 'POST', config, true, '正在保存令牌...');
                 showAlert('令牌保存成功！', 'success');
-
                 clearTokenForm();
                 showTokenList();
                 loadTokens();
@@ -1952,7 +2054,7 @@
                 const tokens = await apiRequest('/api/admin/token', 'GET', null, true);
                 displayTokens(tokens);
             } catch (error) {
-                document.getElementById('tokensList').innerHTML = `<div class="alert alert-error">加载令牌失败: ${error.message}</div>`;
+                DOMUtils.getElement('tokensList').innerHTML = `<div class="alert alert-error">加载令牌失败: ${error.message}</div>`;
             }
         }
 
@@ -1968,8 +2070,10 @@
             }
         }
 
+        // 显示令牌列表的通用函数
         function displayTokens(tokens) {
-            const container = document.getElementById('tokensList');
+            const container = DOMUtils.getElement('tokensList');
+            if (!container) return;
 
             // 处理空数据的情况
             if (!tokens || !Array.isArray(tokens) || tokens.length === 0) {
@@ -1980,7 +2084,6 @@
             container.innerHTML = tokens.map(item => {
                 let parsedValue = {};
                 try {
-                    // 解析 value 字段中的 JSON 字符串
                     parsedValue = JSON.parse(item.value);
                 } catch {
                     parsedValue = { name: 'Invalid JSON', channel_keys: ['Invalid JSON'], total_quota: 0 };
@@ -2019,46 +2122,39 @@
 
         // === PRICING FUNCTIONS ===
 
+        // 创建定价编辑模式管理器
+        const pricingModeManager = new EditModeManager(
+            'pricingTableMode',
+            'pricingJsonMode',
+            'pricingModeToggle',
+            '📊 切换到表格模式',
+            '📝 切换到JSON模式'
+        );
+
         // 切换定价编辑模式
         function togglePricingEditMode() {
-            const tableMode = document.getElementById('pricingTableMode');
-            const jsonMode = document.getElementById('pricingJsonMode');
-            const toggleBtn = document.getElementById('pricingModeToggle');
-            const addBtn = document.getElementById('addPricingModelBtn');
+            const addBtn = DOMUtils.getElement('addPricingModelBtn');
 
-            if (pricingEditMode === 'table') {
-                // 切换到JSON模式
-                const config = collectPricingTableData();
-                document.getElementById('pricingConfigJson').value = JSON.stringify(config, null, 2);
+            pricingModeManager.toggle(
+                collectPricingTableData,
+                (parsed) => displayPricingTable(parsed)
+            );
 
-                tableMode.style.display = 'none';
-                jsonMode.style.display = 'block';
-                if (addBtn) addBtn.style.display = 'none'; // 隐藏添加模型按钮
-                toggleBtn.textContent = '📊 切换到表格模式';
-                pricingEditMode = 'json';
-            } else {
-                // 切换到表格模式
-                try {
-                    const jsonValue = document.getElementById('pricingConfigJson').value;
-                    if (jsonValue) {
-                        const parsed = JSON.parse(jsonValue);
-                        displayPricingTable(parsed);
-                    }
-                } catch (error) {
-                    console.warn('JSON格式错误，无法转换到表格模式:', error);
+            pricingEditMode = pricingModeManager.getCurrentMode();
+
+            // 控制添加模型按钮的显示
+            if (addBtn) {
+                if (pricingEditMode === 'table') {
+                    DOMUtils.show(addBtn);
+                } else {
+                    DOMUtils.hide(addBtn);
                 }
-
-                tableMode.style.display = 'block';
-                jsonMode.style.display = 'none';
-                if (addBtn) addBtn.style.display = 'inline-block'; // 显示添加模型按钮
-                toggleBtn.textContent = '📝 切换到JSON模式';
-                pricingEditMode = 'table';
             }
         }
 
         // 收集定价表格数据
         function collectPricingTableData() {
-            const tbody = document.getElementById('pricingTableBody');
+            const tbody = DOMUtils.getElement('pricingTableBody');
             const config = {};
 
             if (!tbody) return config;
@@ -2084,9 +2180,10 @@
 
         // 添加新的定价模型行
         function addPricingModel() {
-            const tbody = document.getElementById('pricingTableBody');
-            const rowIndex = tbody.children.length;
+            const tbody = DOMUtils.getElement('pricingTableBody');
+            if (!tbody) return;
 
+            const rowIndex = tbody.children.length;
             const row = document.createElement('tr');
             row.style.borderBottom = '1px solid #e9ecef';
             row.innerHTML = `
@@ -2112,7 +2209,7 @@
         // 删除定价模型行
         function removePricingRow(button) {
             const row = button.closest('tr');
-            row.remove();
+            if (row) row.remove();
         }
 
         // 验证定价行数据
@@ -2124,46 +2221,49 @@
         async function loadPricing() {
             try {
                 const pricing = await apiRequest('/api/admin/pricing', 'GET', null, true);
-                const addBtn = document.getElementById('addPricingModelBtn');
+                const addBtn = DOMUtils.getElement('addPricingModelBtn');
 
                 if (pricingEditMode === 'table') {
                     displayPricingTable(pricing);
-                    if (addBtn) addBtn.style.display = 'inline-block';
+                    if (addBtn) DOMUtils.show(addBtn);
                 } else {
-                    document.getElementById('pricingConfigJson').value = JSON.stringify(pricing, null, 2);
-                    if (addBtn) addBtn.style.display = 'none';
+                    DOMUtils.setValue('pricingConfigJson', JSON.stringify(pricing, null, 2));
+                    if (addBtn) DOMUtils.hide(addBtn);
                 }
             } catch (error) {
-                // 失败时显示错误信息
+                // 失败时显示错误信息并重新创建表格结构
                 if (pricingEditMode === 'table') {
-                    document.getElementById('pricingContent').innerHTML = `
-                        <div class="alert alert-error">加载定价配置失败: ${error.message}</div>
-                        <div id="pricingTableMode" class="pricing-table">
-                            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                                <thead>
-                                    <tr style="background-color: #f8f9fa; border-bottom: 2px solid #e9ecef;">
-                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef;">模型名称</th>
-                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef;">输入倍率</th>
-                                        <th style="padding: 12px; text-align: left; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef;">输出倍率</th>
-                                        <th style="padding: 12px; text-align: center; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef; width: 100px;">操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="pricingTableBody">
-                                    <!-- 动态生成的定价行 -->
-                                </tbody>
-                            </table>
-                        </div>
-                        <div id="pricingJsonMode" style="display: none;">
-                            <div class="form-group">
-                                <label for="pricingConfigJson">定价配置 (JSON)</label>
-                                <textarea id="pricingConfigJson" class="form-control" rows="15"
-                                    placeholder='{"gpt-3.5-turbo": {"input": 0.001, "output": 0.002}, "gpt-4": {"input": 0.03, "output": 0.06}}'></textarea>
-                                <small style="color: #666; font-size: 12px; margin-top: 8px; display: block;">
-                                    配置格式：模型名称 -> {input: 输入倍率, output: 输出倍率}。倍率基于1百万token=$1.00计算
-                                </small>
+                    const pricingContent = DOMUtils.getElement('pricingContent');
+                    if (pricingContent) {
+                        pricingContent.innerHTML = `
+                            <div class="alert alert-error">加载定价配置失败: ${error.message}</div>
+                            <div id="pricingTableMode" class="pricing-table">
+                                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                                    <thead>
+                                        <tr style="background-color: #f8f9fa; border-bottom: 2px solid #e9ecef;">
+                                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef;">模型名称</th>
+                                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef;">输入倍率</th>
+                                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef;">输出倍率</th>
+                                            <th style="padding: 12px; text-align: center; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef; width: 100px;">操作</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="pricingTableBody">
+                                        <!-- 动态生成的定价行 -->
+                                    </tbody>
+                                </table>
                             </div>
-                        </div>
-                    `;
+                            <div id="pricingJsonMode" style="display: none;">
+                                <div class="form-group">
+                                    <label for="pricingConfigJson">定价配置 (JSON)</label>
+                                    <textarea id="pricingConfigJson" class="form-control" rows="15"
+                                        placeholder='{"gpt-3.5-turbo": {"input": 0.001, "output": 0.002}, "gpt-4": {"input": 0.03, "output": 0.06}}'></textarea>
+                                    <small style="color: #666; font-size: 12px; margin-top: 8px; display: block;">
+                                        配置格式：模型名称 -> {input: 输入倍率, output: 输出倍率}。倍率基于1百万token=$1.00计算
+                                    </small>
+                                </div>
+                            </div>
+                        `;
+                    }
                 } else {
                     showAlert(`加载定价配置失败: ${error.message}`, 'error');
                 }
@@ -2172,7 +2272,7 @@
 
         // 显示定价配置表格
         function displayPricingTable(pricing) {
-            const tbody = document.getElementById('pricingTableBody');
+            const tbody = DOMUtils.getElement('pricingTableBody');
             if (!tbody) return;
 
             tbody.innerHTML = '';
@@ -2212,26 +2312,23 @@
             });
         }
 
-        async function updatePricing() {
-            let config;
-
-            if (pricingEditMode === 'table') {
-                // 表格模式
-                const tbody = document.getElementById('pricingTableBody');
-
+        // 定价验证类
+        class PricingValidator {
+            static validateTableData() {
+                const tbody = DOMUtils.getElement('pricingTableBody');
                 if (!tbody) {
-                    showAlert('定价表格未找到，请刷新页面重试', 'error');
-                    return;
+                    return { isValid: false, error: '定价表格未找到，请刷新页面重试' };
                 }
 
-                config = {};
-                let hasError = false;
+                const config = {};
                 let errorMessage = '';
 
                 // 遍历所有行收集数据
-                Array.from(tbody.children).forEach((row, index) => {
+                const rows = Array.from(tbody.children);
+                for (let index = 0; index < rows.length; index++) {
+                    const row = rows[index];
                     const inputs = row.querySelectorAll('input');
-                    if (inputs.length < 3) return;
+                    if (inputs.length < 3) continue;
 
                     const modelName = inputs[0].value.trim();
                     const inputPrice = parseFloat(inputs[1].value);
@@ -2239,66 +2336,67 @@
 
                     // 验证数据
                     if (!modelName) {
-                        hasError = true;
                         errorMessage = `第 ${index + 1} 行：模型名称不能为空`;
-                        return;
+                        break;
                     }
 
                     if (isNaN(inputPrice) || inputPrice < 0) {
-                        hasError = true;
                         errorMessage = `第 ${index + 1} 行：输入倍率必须是有效的非负数`;
-                        return;
+                        break;
                     }
 
                     if (isNaN(outputPrice) || outputPrice < 0) {
-                        hasError = true;
                         errorMessage = `第 ${index + 1} 行：输出倍率必须是有效的非负数`;
-                        return;
+                        break;
                     }
 
                     // 检查模型名称是否重复
                     if (config[modelName]) {
-                        hasError = true;
                         errorMessage = `模型名称 "${modelName}" 重复`;
-                        return;
+                        break;
                     }
 
                     config[modelName] = {
                         input: inputPrice,
                         output: outputPrice
                     };
-                });
+                }
 
-                if (hasError) {
-                    showAlert(errorMessage, 'error');
-                    return;
+                if (errorMessage) {
+                    return { isValid: false, error: errorMessage };
                 }
 
                 if (Object.keys(config).length === 0) {
-                    showAlert('请至少添加一个模型的定价配置', 'error');
+                    return { isValid: false, error: '请至少添加一个模型的定价配置' };
+                }
+
+                return { isValid: true, data: config };
+            }
+        }
+
+        async function updatePricing() {
+            let config;
+
+            if (pricingEditMode === 'table') {
+                const validation = PricingValidator.validateTableData();
+                if (!validation.isValid) {
+                    showAlert(validation.error, 'error');
                     return;
                 }
+                config = validation.data;
             } else {
-                // JSON模式
-                const configText = document.getElementById('pricingConfigJson').value.trim();
-
+                const configText = DOMUtils.getValue('pricingConfigJson');
                 if (!configText) {
                     showAlert('请填写定价配置', 'error');
                     return;
                 }
-
-                try {
-                    config = JSON.parse(configText);
-                } catch (error) {
-                    showAlert('配置格式错误，请检查JSON格式', 'error');
-                    return;
-                }
+                config = FormUtils.validateJSON(configText, '配置格式错误，请检查JSON格式');
+                if (!config) return;
             }
 
             try {
                 await apiRequest('/api/admin/pricing', 'POST', config, true, '正在更新定价配置...');
                 showAlert('定价配置更新成功！', 'success');
-                // 更新成功后重新加载配置
                 loadPricing();
             } catch (error) {
                 showAlert(`更新定价配置失败: ${error.message}`, 'error');
@@ -2307,88 +2405,96 @@
 
         // === API TEST FUNCTIONS ===
 
-        // 发送 API 测试请求
-        async function sendApiTest() {
-            const token = document.getElementById('apiTestToken').value.trim();
-            const requestText = document.getElementById('apiTestRequest').value.trim();
-            const responseTextarea = document.getElementById('apiTestResponse');
-            const statusDiv = document.getElementById('apiTestStatus');
+        // API测试管理类
+        class ApiTestManager {
+            static async sendRequest() {
+                const token = DOMUtils.getValue('apiTestToken');
+                const requestText = DOMUtils.getValue('apiTestRequest');
+                const responseTextarea = DOMUtils.getElement('apiTestResponse');
+                const statusDiv = DOMUtils.getElement('apiTestStatus');
 
-            if (!token) {
-                showAlert('请输入 Bearer Token', 'error');
-                return;
+                if (!FormUtils.validateRequired([
+                    { id: 'apiTestToken', name: 'Bearer Token', message: '请输入 Bearer Token' },
+                    { id: 'apiTestRequest', name: '请求 JSON', message: '请输入请求 JSON' }
+                ])) {
+                    return;
+                }
+
+                const requestJson = FormUtils.validateJSON(requestText, '请求 JSON 格式错误');
+                if (!requestJson) return;
+
+                // 显示加载状态
+                if (responseTextarea) responseTextarea.value = '正在发送请求...';
+                if (statusDiv) statusDiv.style.display = 'none';
+
+                try {
+                    const startTime = Date.now();
+
+                    const response = await fetch('/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify(requestJson)
+                    });
+
+                    const endTime = Date.now();
+                    const duration = endTime - startTime;
+
+                    this._displayTestResult(response, duration, responseTextarea, statusDiv);
+                } catch (error) {
+                    this._displayTestError(error, responseTextarea, statusDiv);
+                }
             }
 
-            if (!requestText) {
-                showAlert('请输入请求 JSON', 'error');
-                return;
-            }
-
-            let requestJson;
-            try {
-                requestJson = JSON.parse(requestText);
-            } catch (error) {
-                showAlert('请求 JSON 格式错误: ' + error.message, 'error');
-                return;
-            }
-
-            // 显示加载状态
-            responseTextarea.value = '正在发送请求...';
-            statusDiv.style.display = 'none';
-
-            try {
-                const startTime = Date.now();
-
-                const response = await fetch('/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(requestJson)
-                });
-
-                const endTime = Date.now();
-                const duration = endTime - startTime;
-
-                // 显示状态信息
-                statusDiv.style.display = 'block';
+            static async _displayTestResult(response, duration, responseTextarea, statusDiv) {
+                if (statusDiv) statusDiv.style.display = 'block';
 
                 if (response.ok) {
-                    // 状态码正常，解析 JSON 响应
                     const responseData = await response.json();
-                    responseTextarea.value = JSON.stringify(responseData, null, 2);
+                    if (responseTextarea) {
+                        responseTextarea.value = JSON.stringify(responseData, null, 2);
+                    }
 
-                    statusDiv.className = 'alert alert-success';
-                    statusDiv.innerHTML = `
-                        <strong>✅ 请求成功</strong><br>
-                        状态码: ${response.status}<br>
-                        响应时间: ${duration}ms
-                    `;
+                    if (statusDiv) {
+                        statusDiv.className = 'alert alert-success';
+                        statusDiv.innerHTML = `
+                            <strong>✅ 请求成功</strong><br>
+                            状态码: ${response.status}<br>
+                            响应时间: ${duration}ms
+                        `;
+                    }
                 } else {
-                    // 状态码异常，显示纯文本错误
                     const errorText = await response.text();
-                    responseTextarea.value = errorText;
+                    if (responseTextarea) responseTextarea.value = errorText;
 
-                    statusDiv.className = 'alert alert-error';
-                    statusDiv.innerHTML = `
-                        <strong>❌ 请求失败</strong><br>
-                        状态码: ${response.status}<br>
-                        响应时间: ${duration}ms
-                    `;
+                    if (statusDiv) {
+                        statusDiv.className = 'alert alert-error';
+                        statusDiv.innerHTML = `
+                            <strong>❌ 请求失败</strong><br>
+                            状态码: ${response.status}<br>
+                            响应时间: ${duration}ms
+                        `;
+                    }
                 }
-            } catch (error) {
-                responseTextarea.value = `请求失败: ${error.message}`;
-                statusDiv.style.display = 'block';
-                statusDiv.className = 'alert alert-error';
-                statusDiv.innerHTML = `<strong>❌ 网络错误</strong><br>${error.message}`;
             }
-        }
 
-        // 清空 API 测试数据
-        function clearApiTest() {
-            document.getElementById('apiTestToken').value = '';
-            document.getElementById('apiTestRequest').value = `{
+            static _displayTestError(error, responseTextarea, statusDiv) {
+                if (responseTextarea) {
+                    responseTextarea.value = `请求失败: ${error.message}`;
+                }
+
+                if (statusDiv) {
+                    statusDiv.style.display = 'block';
+                    statusDiv.className = 'alert alert-error';
+                    statusDiv.innerHTML = `<strong>❌ 网络错误</strong><br>${error.message}`;
+                }
+            }
+
+            static clear() {
+                DOMUtils.clearInput('apiTestToken');
+                DOMUtils.setValue('apiTestRequest', `{
   "model": "gpt-4",
   "messages": [
     {
@@ -2396,18 +2502,38 @@
       "content": "Hello, world!"
     }
   ]
-}`;
-            document.getElementById('apiTestResponse').value = '';
-            document.getElementById('apiTestStatus').style.display = 'none';
+}`);
+                DOMUtils.clearInput('apiTestResponse');
+                const statusDiv = DOMUtils.getElement('apiTestStatus');
+                if (statusDiv) statusDiv.style.display = 'none';
+            }
+        }
+
+        // 发送 API 测试请求
+        async function sendApiTest() {
+            await ApiTestManager.sendRequest();
+        }
+
+        // 清空 API 测试数据
+        function clearApiTest() {
+            ApiTestManager.clear();
         }
 
         // === UTILITY FUNCTIONS ===
 
-        function copyToClipboard(text) {
-            navigator.clipboard.writeText(text).then(() => {
-                showAlert('已复制到剪贴板', 'success', 2000);
-            }).catch(() => {
-                // 降级方案
+        // 剪贴板管理类
+        class ClipboardManager {
+            static async copy(text) {
+                try {
+                    await navigator.clipboard.writeText(text);
+                    showAlert('已复制到剪贴板', 'success', 2000);
+                } catch (error) {
+                    // 降级方案
+                    this._fallbackCopy(text);
+                }
+            }
+
+            static _fallbackCopy(text) {
                 const textArea = document.createElement('textarea');
                 textArea.value = text;
                 document.body.appendChild(textArea);
@@ -2415,25 +2541,42 @@
                 document.execCommand('copy');
                 document.body.removeChild(textArea);
                 showAlert('已复制到剪贴板', 'success', 2000);
-            });
+            }
+        }
+
+        function copyToClipboard(text) {
+            ClipboardManager.copy(text);
+        }
+
+        // 消息提示管理类
+        class AlertManager {
+            static show(message, type, duration = 5000) {
+                // 移除现有提示
+                this._removeExistingAlerts();
+
+                const alertDiv = document.createElement('div');
+                alertDiv.className = `alert alert-${type} alert-top`;
+                alertDiv.textContent = message;
+
+                const container = document.querySelector('.container');
+                if (container) {
+                    container.insertBefore(alertDiv, container.firstChild);
+                }
+
+                // 自动移除
+                setTimeout(() => {
+                    alertDiv.remove();
+                }, duration);
+            }
+
+            static _removeExistingAlerts() {
+                const existingAlerts = document.querySelectorAll('.alert');
+                existingAlerts.forEach(alert => alert.remove());
+            }
         }
 
         function showAlert(message, type, duration = 5000) {
-            // Remove existing alerts
-            const existingAlerts = document.querySelectorAll('.alert');
-            existingAlerts.forEach(alert => alert.remove());
-
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-top`;
-            alertDiv.textContent = message;
-
-            const container = document.querySelector('.container');
-            container.insertBefore(alertDiv, container.firstChild);
-
-            // Auto remove after specified duration
-            setTimeout(() => {
-                alertDiv.remove();
-            }, duration);
+            AlertManager.show(message, type, duration);
         }
 
         // Loading 管理对象
@@ -2550,44 +2693,60 @@
             LoadingManager.hide();
         }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function () {
-            const savedToken = localStorage.getItem('adminToken');
-            if (savedToken) {
-                adminToken = savedToken;
-                showMainContent();
-            } else {
-                // 默认显示首页（未登录状态）
-                showHomePage();
+        // === 页面初始化和事件处理 ===
+
+        // 页面初始化管理类
+        class PageInitializer {
+            static init() {
+                this._initAuth();
+                this._initEventListeners();
+                this._initKeyboardShortcuts();
             }
 
-            // 为登录输入框添加回车键监听
-            const tokenInput = document.getElementById('adminToken');
-            if (tokenInput) {
-                tokenInput.addEventListener('keypress', function (event) {
-                    if (event.key === 'Enter') {
-                        authenticate();
+            static _initAuth() {
+                if (AuthManager.restoreToken()) {
+                    showMainContent();
+                } else {
+                    showHomePage();
+                }
+            }
+
+            static _initEventListeners() {
+                // 为登录输入框添加回车键监听
+                const tokenInput = DOMUtils.getElement('adminToken');
+                if (tokenInput) {
+                    tokenInput.addEventListener('keypress', (event) => {
+                        if (event.key === 'Enter') {
+                            authenticate();
+                        }
+                    });
+                }
+
+                // 点击模态框外部关闭
+                window.onclick = (event) => {
+                    const modal = DOMUtils.getElement('loginModal');
+                    if (event.target === modal) {
+                        closeLoginModal();
+                    }
+                };
+            }
+
+            static _initKeyboardShortcuts() {
+                // ESC键关闭模态框
+                document.addEventListener('keydown', (event) => {
+                    if (event.key === 'Escape') {
+                        const modal = DOMUtils.getElement('loginModal');
+                        if (modal && modal.style.display === 'block') {
+                            closeLoginModal();
+                        }
                     }
                 });
             }
-        });
-
-        // 点击模态框外部关闭
-        window.onclick = function (event) {
-            const modal = document.getElementById('loginModal');
-            if (event.target == modal) {
-                closeLoginModal();
-            }
         }
 
-        // 添加ESC键关闭模态框
-        document.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape') {
-                const modal = document.getElementById('loginModal');
-                if (modal.style.display === 'block') {
-                    closeLoginModal();
-                }
-            }
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            PageInitializer.init();
         });
     </script>
 </body>
