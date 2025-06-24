@@ -10,7 +10,12 @@ const buildProxyRequest = (
 ): Request => {
     const url = new URL(request.url)
     const targetUrl = new URL(config.endpoint)
-    targetUrl.pathname = `/openai/deployments/${deploymentName}/${url.pathname.replace('/v1/', '')}`
+
+    // 如果 endpoint 末尾不带 #，则设置标准的 Azure OpenAI pathname
+    if (!config.endpoint.endsWith('#')) {
+        targetUrl.pathname = `/openai/deployments/${deploymentName}/${url.pathname.replace('/v1/', '')}`
+    }
+
     targetUrl.searchParams.set('api-version', config.api_version)
 
     const targetHeaders = new Headers(request.headers)
