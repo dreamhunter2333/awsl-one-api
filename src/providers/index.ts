@@ -2,9 +2,9 @@ import { Context, Hono } from "hono"
 import { contentJson, fromHono, OpenAPIRoute } from 'chanfana';
 
 import azureOpenaiProxy from "./azure-openai-proxy"
+import openaiProxy from "./openai-proxy"
 import utils from "../utils"
 import { TokenUtils } from "../admin/token_utils"
-import { ChannelConfigRow } from "../db/db_model"
 import { CONSTANTS } from "../constants"
 import { z } from "zod";
 
@@ -19,6 +19,7 @@ const providerMap: Record<
     ) => Promise<Response>
 > = {
     "azure-openai": azureOpenaiProxy.fetch,
+    "openai": openaiProxy.fetch,
 };
 
 class ProxyEndpoint extends OpenAPIRoute {

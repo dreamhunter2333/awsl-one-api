@@ -842,12 +842,14 @@
                         <div id="channelFormMode">
                             <div class="form-group">
                                 <label for="channelName">频道名称</label>
-                                <input type="text" id="channelName" class="form-control" placeholder="例如: Azure OpenAI">
+                                <input type="text" id="channelName" class="form-control"
+                                    placeholder="例如: My OpenAI Channel">
                             </div>
                             <div class="form-group">
                                 <label for="channelType">频道类型</label>
                                 <select id="channelType" class="form-control" onchange="toggleApiVersionField()">
                                     <option value="azure-openai">Azure OpenAI</option>
+                                    <option value="openai">OpenAI</option>
                                 </select>
                             </div>
                             <div class="form-group">
@@ -869,7 +871,7 @@
                                 <label for="deploymentMapper">模型部署映射 (JSON)</label>
                                 <textarea id="deploymentMapper" class="form-control" rows="4"
                                     placeholder='{"gpt-35-turbo": "gpt-35-turbo", "gpt-4": "gpt-4"}'></textarea>
-                                <small style="color: #666; font-size: 12px;">配置模型名称到部署名称的映射关系</small>
+                                <small style="color: #666; font-size: 12px;">配置模型名称映射关系（主要用于Azure OpenAI）</small>
                             </div>
                             <div class="form-group">
                                 <label for="additionalConfig">其他配置 (JSON，可选)</label>
@@ -1695,8 +1697,8 @@
 
             // 重置表单状态
             FormUtils.setReadonly('channelKey', false);
-            DOMUtils.setValue('channelType', 'azure-openai');
-            DOMUtils.getElement('channelKey').placeholder = '例如: azure-openai-1';
+            DOMUtils.setValue('channelType', 'openai');
+            DOMUtils.getElement('channelKey').placeholder = '例如: openai-1';
 
             // 重置编辑模式
             channelModeManager.resetToFormMode();
