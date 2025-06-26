@@ -113,6 +113,9 @@ export default {
             throw new Error(`Model ${modelName} not supported`)
         }
 
+        // 替换模型名称为映射后的名称
+        reqJson.model = deploymentName
+
         // 构建目标请求
         const proxyRequest = buildProxyRequest(c.req.raw, reqJson, config)
 

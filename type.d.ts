@@ -39,7 +39,7 @@ type ChannelConfig = {
     type: ChannelType;
     endpoint: string;
     api_key: string;
-    api_version: string;
+    api_version?: string;
     deployment_mapper: Record<string, string>;
     model_pricing?: Record<string, ModelPricing>;
 }
