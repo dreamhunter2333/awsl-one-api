@@ -123,39 +123,10 @@ class ProxyEndpoint extends OpenAPIRoute {
 
         return proxyFetch(c, targetChannelConfig,
             async (usage: Usage) => {
-                console.log("Usage data:", usage);
-
-                // Calculate cost based on usage and model pricing
-                // Model was already extracted above
-
-                // Get global pricing as base configuration
-                let pricing = null;
-                const globalPricing = await utils.getSetting(c, CONSTANTS.MODEL_PRICING_KEY);
-                if (globalPricing) {
-                    const globalPricingMap = JSON.parse(globalPricing);
-                    pricing = globalPricingMap[model];
-                }
-
-                // Override with channel-specific pricing if available
-                if (targetChannelConfig.model_pricing?.[model]) {
-                    pricing = targetChannelConfig.model_pricing[model];
-                }
-
-                if (pricing && usage.prompt_tokens && usage.completion_tokens) {
-                    const inputCost = usage.prompt_tokens * pricing.input;
-                    const outputCost = usage.completion_tokens * pricing.output;
-                    const totalCost = inputCost + outputCost;
-
-                    // Update token usage using TokenUtils
-                    const updated = await TokenUtils.updateUsage(c, apiKey, totalCost);
-                    if (!updated) {
-                        console.error("Failed to update token usage");
-                    }
-
-                    console.log(`Model: ${model}, Channel: ${targetChannelKey}, Channel pricing: ${!!targetChannelConfig.model_pricing?.[model]}, Cost: ${totalCost}, Updated: ${updated}`);
-                }
-                else {
-                    console.warn(`No pricing found for model: ${model} in channel: ${targetChannelKey}`);
+                try {
+                    await TokenUtils.processUsage(c, apiKey, model, targetChannelKey, targetChannelConfig, usage);
+                } catch (error) {
+                    console.error('Error processing usage:', error);
                 }
             }
         );
