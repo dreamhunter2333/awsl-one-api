@@ -16,7 +16,9 @@ const buildProxyRequest = (
         targetUrl.pathname = `/openai/deployments/${deploymentName}/${url.pathname.replace('/v1/', '')}`
     }
 
-    targetUrl.searchParams.set('api-version', config.api_version)
+    if (config.api_version) {
+        targetUrl.searchParams.set('api-version', config.api_version)
+    }
 
     const targetHeaders = new Headers(request.headers)
     targetHeaders.delete("Authorization")
@@ -44,60 +46,57 @@ const checkoutUsageData = async (
     }
 }
 
-const processStreamData = (
+const processStreamData = async (
     lines: string[],
     saveUsage: (usage: Usage) => Promise<void>
-): void => {
-    lines
+): Promise<void> => {
+    const processedLines = lines
         .map(line => line.trim())
         .filter(line => line.length > 0 && line.startsWith('data:'))
         .map(line => line.replace('data: ', '').trim())
         .filter(line => line !== '[DONE]')
-        .forEach(jsonContent => {
-            try {
-                const res = JSON.parse(jsonContent) as OpenAIResponse
-                checkoutUsageData(saveUsage, res)
-            } catch (e) {
-                console.error("Error parsing stream data:", e)
-            }
-        })
+
+    for (const jsonContent of processedLines) {
+        try {
+            const res = JSON.parse(jsonContent) as OpenAIResponse
+            await checkoutUsageData(saveUsage, res)
+        } catch (e) {
+            console.error("Error parsing stream data:", e)
+        }
+    }
 }
 
 const handleStreamResponse = async (
     c: Context<HonoCustomType>,
-    response: Response,
+    streamForServer: ReadableStream<any> | undefined,
     saveUsage: (usage: Usage) => Promise<void>
-): Promise<Response> => {
-    return streamText(c, async (stream) => {
-        const reader = response.body?.getReader()
-        if (!reader) {
-            throw new Error("No reader found in response body")
-        }
+): Promise<void> => {
+    const reader = streamForServer?.getReader()
+    if (!reader) {
+        throw new Error("No reader found in response body")
+    }
 
-        const decoder = new TextDecoder('utf-8')
-        let buffer = ""
+    const decoder = new TextDecoder('utf-8')
+    let buffer = ""
+    while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
 
-        while (true) {
-            const { done, value } = await reader.read()
-            if (done) break
+        const chunk = decoder.decode(value, { stream: true })
+        buffer += chunk
 
-            const chunk = decoder.decode(value, { stream: true })
-            await stream.write(chunk)
-            buffer += chunk
+        if (!chunk.includes('\n')) continue
 
-            if (!chunk.includes('\n')) continue
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ""
 
-            const lines = buffer.split('\n')
-            buffer = lines.pop() || ""
+        await processStreamData(lines, saveUsage)
+    }
 
-            processStreamData(lines, saveUsage)
-        }
-
-        // 处理最后剩余的数据
-        if (buffer.trim()) {
-            processStreamData([buffer], saveUsage)
-        }
-    })
+    // 处理最后剩余的数据
+    if (buffer.trim()) {
+        await processStreamData([buffer], saveUsage)
+    }
 }
 
 export default {
@@ -128,7 +127,13 @@ export default {
 
         // 处理流式响应
         if (stream) {
-            return handleStreamResponse(c, response, saveUsage)
+            const [streamForClient, streamForServer] = response.body?.tee() || []
+            c.executionCtx.waitUntil(handleStreamResponse(c, streamForServer, saveUsage))
+            return new Response(streamForClient, {
+                headers: response.headers,
+                status: response.status,
+                statusText: response.statusText,
+            })
         }
 
         // 处理常规响应
