@@ -38,7 +38,7 @@ flowchart LR
 ```
 
 <details>
-<summary>📁 项目结构</summary>
+<summary><h2>📁 项目结构</h2></summary>
 
 ```text
 awsl-one-api/
@@ -126,7 +126,7 @@ pnpm run deploy
 ```
 
 <details>
-<summary>📖 使用指南</summary>
+<summary><h2>📖 使用指南</h2></summary>
 
 ### 初始化数据库
 
