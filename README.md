@@ -126,9 +126,11 @@ pnpm run deploy
 ```
 
 <details>
-<summary><h2>📖 使用指南</h2></summary>
+<summary><h2>📖 使用与配置</h2></summary>
 
-### 初始化数据库
+### 使用指南
+
+#### 初始化数据库
 
 首次部署后，需要通过 Web 界面初始化数据库：
 
@@ -137,7 +139,7 @@ pnpm run deploy
 3. 切换到 **📊 数据库** 标签
 4. 点击 **🔄 初始化数据库** 按钮
 
-### 频道配置
+#### 频道配置
 
 1. 在 Web 界面切换到 **🔗 频道管理** 标签
 2. 点击 **➕ 添加频道** 按钮
@@ -149,7 +151,7 @@ pnpm run deploy
 
 **提示**：系统会根据选择的频道类型自动显示相应的配置字段。
 
-### Token 创建和使用
+#### Token 创建和使用
 
 1. 在 Web 界面切换到 **🔑 令牌管理** 标签
 2. 点击 **➕ 添加令牌** 按钮
@@ -158,7 +160,7 @@ pnpm run deploy
 5. 点击 **💾 保存令牌** 按钮
 6. 使用 **📋 复制** 按钮获取 Token 用于 API 调用
 
-### OpenAI 兼容 API
+#### OpenAI 兼容 API
 
 本项目提供完全兼容的 OpenAI API 接口：
 
@@ -177,11 +179,11 @@ curl https://your-domain.com/v1/chat/completions \
   }'
 ```
 
-### API 测试工具
+#### API 测试工具
 
 管理界面内置了强大的 API 测试工具，无需额外工具即可进行 API 调试：
 
-#### 功能特性
+**功能特性**
 
 - **🚀 一键测试**：直接在 Web 界面中测试 API 调用
 - **📝 JSON 编辑器**：支持 JSON 格式验证和语法高亮
@@ -189,7 +191,7 @@ curl https://your-domain.com/v1/chat/completions \
 - **🔍 错误诊断**：自动区分 HTTP 错误和 JSON 响应，便于排查问题
 - **📋 一键复制**：支持复制 Token 和响应内容
 
-#### 使用步骤
+**使用步骤**
 
 1. 访问管理界面，切换到 **🧪 API 测试** 标签
 2. 输入你的 API Token（可从令牌管理页面复制）
@@ -197,11 +199,9 @@ curl https://your-domain.com/v1/chat/completions \
 4. 点击 **🚀 发送请求** 按钮
 5. 查看响应结果和状态信息
 
-</details>
+### 管理功能
 
-## 🛠️ 管理功能
-
-### Web 管理界面
+#### Web 管理界面
 
 访问 `https://your-domain.com` 即可使用 Web 管理界面，功能包括：
 
@@ -211,20 +211,20 @@ curl https://your-domain.com/v1/chat/completions \
 - **💰 定价配置**：灵活配置不同模型的定价策略
 - **🧪 API 测试工具**：内置 API 测试界面，支持实时调试和错误排查
 
-#### 管理界面特性
+**管理界面特性**
 
 - **现代化 UI**：响应式设计，支持桌面和移动设备
 - **实时反馈**：操作结果即时显示，支持悬浮提示
 - **智能表单**：自动生成 Token、JSON 格式验证、一键复制功能，根据频道类型智能显示配置字段
 - **安全认证**：管理员 Token 认证，数据安全保护
 
-## 🔧 配置说明
+### 配置说明
 
-### 渠道配置
+#### 渠道配置
 
 目前支持以下 AI 服务提供商：
 
-#### Azure OpenAI 配置
+**Azure OpenAI 配置**
 
 ```json
 {
@@ -240,7 +240,7 @@ curl https://your-domain.com/v1/chat/completions \
 }
 ```
 
-#### OpenAI 配置
+**OpenAI 配置**
 
 ```json
 {
@@ -255,7 +255,7 @@ curl https://your-domain.com/v1/chat/completions \
 }
 ```
 
-**配置说明**：
+**配置字段说明**：
 
 - `name`: 频道显示名称
 - `type`: 服务提供商类型（`azure-openai` 或 `openai`）
@@ -276,11 +276,13 @@ curl https://your-domain.com/v1/chat/completions \
 }
 ```
 
-**配置说明**：
+**配置字段说明**：
 
 - `name`: Token 名称，便于管理识别
 - `channel_keys`: 允许访问的频道列表，空数组表示允许所有频道
 - `total_quota`: 总配额（基础单位：1百万 token = $1.00）
+
+</details>
 
 ## 📊 监控与统计
 
