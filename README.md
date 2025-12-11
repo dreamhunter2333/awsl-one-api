@@ -282,16 +282,14 @@ curl https://your-domain.com/v1/chat/completions \
 - `channel_keys`: 允许访问的频道列表，空数组表示允许所有频道
 - `total_quota`: 总配额（基础单位：1百万 token = $1.00）
 
-</details>
-
-## 📊 监控与统计
+### 监控与统计
 
 - **使用量统计**：自动记录每次 API 调用的 Token 使用量
 - **费用计算**：基于模型定价自动计算费用
 - **配额管理**：支持 Token 级别的配额限制
 - **实时监控**：Web 界面实时显示使用情况和剩余配额
 
-## 🎯 核心优势
+### 核心优势
 
 - **零配置部署**：基于 Cloudflare Workers，无需服务器维护
 - **全球加速**：利用 Cloudflare 全球边缘网络，低延迟访问
@@ -299,19 +297,21 @@ curl https://your-domain.com/v1/chat/completions \
 - **高可用性**：Cloudflare 基础设施保证 99.9% 可用性
 - **安全可靠**：内置 Token 认证和配额管理机制
 
-## 🔒 安全性
+### 安全性
 
 - **Token 认证**：所有 API 调用需要有效的 Bearer Token
 - **管理员认证**：管理接口使用独立的管理员 Token
 - **CORS 支持**：配置跨域访问策略
 
-## 📚 API 文档
+### API 文档
 
 部署后可访问以下地址查看完整 API 文档：
 
 - Swagger UI: `https://your-domain.com/api/docs`
 - ReDoc: `https://your-domain.com/api/redocs`
 - OpenAPI JSON: `https://your-domain.com/api/openapi.json`
+
+</details>
 
 ## 🤝 贡献
 
