@@ -13,7 +13,32 @@
 - 🧪 **API 测试工具**：内置 API 测试功能，支持实时调试
 - 📚 **OpenAPI 文档**：自动生成的 API 文档
 
-## 🏗️ 项目结构
+## 🏗️ 系统架构
+
+```mermaid
+flowchart LR
+    subgraph Clients["客户端"]
+        A[Client Apps]
+    end
+
+    subgraph CF["Cloudflare Workers"]
+        B[AWSL One API]
+        D[(Cloudflare D1<br/>Database)]
+    end
+
+    subgraph Providers["AI 服务提供商"]
+        C1[Azure OpenAI]
+        C2[OpenAI]
+    end
+
+    A -->|API Request| B
+    B -->|Proxy| C1
+    B -->|Proxy| C2
+    B <-->|Read/Write| D
+```
+
+<details>
+<summary>📁 项目结构</summary>
 
 ```text
 awsl-one-api/
@@ -40,29 +65,7 @@ awsl-one-api/
 └── package.json                  # 项目配置
 ```
 
-## 🏗️ 系统架构
-
-```mermaid
-flowchart LR
-    subgraph Clients["客户端"]
-        A[Client Apps]
-    end
-
-    subgraph CF["Cloudflare Workers"]
-        B[AWSL One API]
-        D[(Cloudflare D1<br/>Database)]
-    end
-
-    subgraph Providers["AI 服务提供商"]
-        C1[Azure OpenAI]
-        C2[OpenAI]
-    end
-
-    A -->|API Request| B
-    B -->|Proxy| C1
-    B -->|Proxy| C2
-    B <-->|Read/Write| D
-```
+</details>
 
 ## 🚀 快速开始
 
@@ -122,7 +125,8 @@ pnpm dev
 pnpm run deploy
 ```
 
-## 📖 使用指南
+<details>
+<summary>📖 使用指南</summary>
 
 ### 初始化数据库
 
@@ -192,6 +196,8 @@ curl https://your-domain.com/v1/chat/completions \
 3. 编辑请求 JSON（预填充标准格式）
 4. 点击 **🚀 发送请求** 按钮
 5. 查看响应结果和状态信息
+
+</details>
 
 ## 🛠️ 管理功能
 
