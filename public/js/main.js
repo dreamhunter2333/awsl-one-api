@@ -3,7 +3,7 @@ import { toggleModal, switchTab, toggleTheme, showNotification, copyToClipboard 
 import { toggleAuthModal, authenticate, initAuth } from './auth.js';
 import { updateRequestTemplate, testAPI } from './api-test.js';
 import { loadChannels, showChannelList, showChannelForm, editChannel, saveChannel, toggleChannelEditMode, deleteChannel, addMapperRow, removeMapperRow } from './channels.js';
-import { loadTokens, showTokenList, showTokenForm, editToken, saveToken, generateTokenKey, toggleTokenEditMode, deleteToken, setQuotaValue, toggleChannelDropdown, toggleChannelSelection, filterChannels } from './tokens.js';
+import { loadTokens, showTokenList, showTokenForm, editToken, saveToken, generateTokenKey, toggleTokenEditMode, deleteToken, setQuotaValue, toggleChannelDropdown, toggleChannelSelection, filterChannels, handleChannelCheckboxChange } from './tokens.js';
 import { loadPricing, savePricing, addPricingModel, removePricingRow, togglePricingEditMode } from './pricing.js';
 import { initDatabase } from './database.js';
 
@@ -36,6 +36,7 @@ window.toggleTokenEditMode = toggleTokenEditMode;
 window.deleteToken = deleteToken;
 window.toggleChannelDropdown = toggleChannelDropdown;
 window.toggleChannelSelection = toggleChannelSelection;
+window.handleChannelCheckboxChange = handleChannelCheckboxChange;
 window.filterChannels = filterChannels;
 window.loadPricing = loadPricing;
 window.savePricing = savePricing;

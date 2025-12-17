@@ -34,8 +34,8 @@ function populateChannelOptions() {
         container.innerHTML = '<div class="multi-select-empty">暂无可用频道</div>';
     } else {
         container.innerHTML = availableChannels.map(key => `
-            <div class="multi-select-option" onclick="window.toggleChannelSelection('${key}', event)">
-                <input type="checkbox" id="channel_${key}" value="${key}" ${selectedChannels.includes(key) ? 'checked' : ''}>
+            <div class="multi-select-option">
+                <input type="checkbox" id="channel_${key}" value="${key}" ${selectedChannels.includes(key) ? 'checked' : ''} onchange="window.handleChannelCheckboxChange('${key}')">
                 <label for="channel_${key}">${key}</label>
             </div>
         `).join('');
@@ -73,7 +73,25 @@ function closeChannelDropdownOnClickOutside(event) {
     }
 }
 
-// Toggle channel selection
+// Handle checkbox change event
+export function handleChannelCheckboxChange(channelKey) {
+    const checkbox = document.getElementById(`channel_${channelKey}`);
+    if (!checkbox) return;
+
+    if (checkbox.checked) {
+        // Add to selected if not already present
+        if (!selectedChannels.includes(channelKey)) {
+            selectedChannels.push(channelKey);
+        }
+    } else {
+        // Remove from selected
+        selectedChannels = selectedChannels.filter(k => k !== channelKey);
+    }
+
+    updateChannelDisplay();
+}
+
+// Toggle channel selection (deprecated, kept for compatibility)
 export function toggleChannelSelection(channelKey, event) {
     event.stopPropagation();
 
