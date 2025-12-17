@@ -24,7 +24,7 @@ type ClaudeMessageResponse = {
 
 type ClaudeStreamEvent = {
     type: "message_start" | "content_block_start" | "content_block_delta" |
-          "content_block_stop" | "message_delta" | "message_stop" | "ping" | "error";
+          "content_block_stop" | "message_delta" | "message_stop" | "message_complete" | "ping" | "error";
     message?: {
         usage: {
             input_tokens: number;
@@ -36,15 +36,17 @@ type ClaudeStreamEvent = {
         stop_sequence?: string | null;
     };
     usage?: {
+        input_tokens?: number;
         output_tokens: number;
     };
 }
 
 /**
  * Builds the proxy request for Claude API
+ * - Removes Authorization header (client may send OpenAI format)
  * - Sets x-api-key header (Claude uses this instead of Authorization)
  * - Sets anthropic-version header (required by Claude API)
- * - Forces stream: true for usage tracking (similar to OpenAI pattern)
+ * - Preserves all other headers from original request
  */
 const buildProxyRequest = (
     request: Request,
@@ -58,6 +60,9 @@ const buildProxyRequest = (
     targetUrl.pathname = url.pathname
 
     const targetHeaders = new Headers(request.headers)
+
+    // Remove Authorization header (client may send OpenAI format: "Authorization: Bearer sk-xxx")
+    targetHeaders.delete("Authorization")
 
     // Claude uses x-api-key header instead of Authorization
     targetHeaders.set("x-api-key", config.api_key)
@@ -110,12 +115,17 @@ const checkoutUsageData = async (
  *
  * Claude SSE format:
  * event: message_start
- * data: {"type": "message_start", "message": {..., "usage": {"input_tokens": 26, "output_tokens": 0}}}
+ * data: {"type": "message_start", "message": {..., "usage": {"input_tokens": 20, "output_tokens": 1}}}
  *
  * event: message_delta
- * data: {"type": "message_delta", "delta": {...}, "usage": {"output_tokens": 40}}
+ * data: {"type": "message_delta", "delta": {...}, "usage": {"output_tokens": 50}}
  *
- * We accumulate input_tokens from message_start and output_tokens from message_delta
+ * event: message_complete
+ * data: {"type": "message_complete", "message": {..., "usage": {"input_tokens": 20, "output_tokens": 50}}}
+ *
+ * We can either:
+ * 1. Accumulate input_tokens from message_start and output_tokens from message_delta
+ * 2. Get complete usage from message_complete event (preferred as it's more reliable)
  */
 const processStreamData = async (
     lines: string[],
@@ -147,7 +157,17 @@ const processStreamData = async (
                 usageAccumulator.output_tokens = event.usage.output_tokens
             }
 
-            // When stream ends, save the accumulated usage
+            // Handle message_complete event (has complete usage info)
+            if (event.type === "message_complete" && event.message?.usage) {
+                const usage: Usage = {
+                    prompt_tokens: event.message.usage.input_tokens,
+                    completion_tokens: event.message.usage.output_tokens,
+                    total_tokens: event.message.usage.input_tokens + event.message.usage.output_tokens,
+                }
+                await saveUsage(usage)
+            }
+
+            // When stream ends with message_stop (fallback for old API versions)
             if (event.type === "message_stop") {
                 const usage: Usage = {
                     prompt_tokens: usageAccumulator.input_tokens,
