@@ -24,7 +24,7 @@ type ClaudeMessageResponse = {
 
 type ClaudeStreamEvent = {
     type: "message_start" | "content_block_start" | "content_block_delta" |
-          "content_block_stop" | "message_delta" | "message_stop" | "message_complete" | "ping" | "error";
+    "content_block_stop" | "message_delta" | "message_stop" | "message_complete" | "ping" | "error";
     message?: {
         usage: {
             input_tokens: number;
@@ -63,15 +63,10 @@ const buildProxyRequest = (
 
     // Remove Authorization header (client may send OpenAI format: "Authorization: Bearer sk-xxx")
     targetHeaders.delete("Authorization")
+    targetHeaders.delete("x-api-key")
 
     // Claude uses x-api-key header instead of Authorization
     targetHeaders.set("x-api-key", config.api_key)
-
-    // Required API version header
-    targetHeaders.set("anthropic-version", config.api_version || "2023-06-01")
-
-    // Ensure content-type is set
-    targetHeaders.set("Content-Type", "application/json")
 
     return new Request(targetUrl, {
         method: request.method,
@@ -261,19 +256,15 @@ export default {
         // Map model name
         reqJson.model = deploymentName
 
-        // Force streaming for usage tracking
-        // Unlike OpenAI, Claude doesn't need stream_options - usage is always included
-        if (!stream) {
-            // Even for non-streaming, we might want to force stream for consistency
-            // But Claude's non-streaming response already includes usage, so we keep it as-is
-        }
+        // Note: Unlike OpenAI, Claude's non-streaming response already includes usage data,
+        // so we don't need to force stream=true for usage tracking
 
         // Build and send proxy request
         const proxyRequest = buildProxyRequest(c.req.raw, reqJson, config)
         const response = await fetch(proxyRequest)
 
         // Handle streaming response
-        if (stream || reqJson.stream) {
+        if (stream) {
             const [streamForClient, streamForServer] = response.body?.tee() || []
 
             // Process stream in background to extract usage
