@@ -29,7 +29,8 @@ class ProxyEndpoint extends OpenAPIRoute {
         tags: ['OpenAI Proxy'],
         request: {
             headers: z.object({
-                'Authorization': z.string().describe("Token for authentication"),
+                'Authorization': z.string().optional().describe("Token for authentication (OpenAI format)"),
+                'x-api-key': z.string().optional().describe("API key for authentication (Claude format)"),
             }),
             body: contentJson({
                 schema: z.any(),
@@ -43,10 +44,22 @@ class ProxyEndpoint extends OpenAPIRoute {
     };
 
     async handle(c: Context<HonoCustomType>) {
+        // Support both OpenAI format (Authorization: Bearer xxx) and Claude format (x-api-key: xxx)
         const authHeader = c.req.raw.headers.get('Authorization');
-        const apiKey = authHeader?.replace("Bearer ", "").trim();
+        const xApiKey = c.req.raw.headers.get('x-api-key');
+
+        let apiKey: string | undefined;
+
+        if (authHeader) {
+            // OpenAI format: Authorization: Bearer sk-xxx
+            apiKey = authHeader.replace("Bearer ", "").trim();
+        } else if (xApiKey) {
+            // Claude format: x-api-key: sk-xxx
+            apiKey = xApiKey.trim();
+        }
+
         if (!apiKey) {
-            return c.text("Authorization header not found", 401);
+            return c.text("Authorization header or x-api-key not found", 401);
         }
 
         // Get token from database using direct SQL query
