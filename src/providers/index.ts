@@ -3,6 +3,7 @@ import { contentJson, fromHono, OpenAPIRoute } from 'chanfana';
 
 import azureOpenaiProxy from "./azure-openai-proxy"
 import openaiProxy from "./openai-proxy"
+import claudeProxy from "./claude-proxy"
 import utils from "../utils"
 import { TokenUtils } from "../admin/token_utils"
 import { CONSTANTS } from "../constants"
@@ -20,6 +21,7 @@ const providerMap: Record<
 > = {
     "azure-openai": azureOpenaiProxy.fetch,
     "openai": openaiProxy.fetch,
+    "claude": claudeProxy.fetch,
 };
 
 class ProxyEndpoint extends OpenAPIRoute {
@@ -134,3 +136,4 @@ class ProxyEndpoint extends OpenAPIRoute {
 }
 
 api.post("/v1/chat/completions", ProxyEndpoint)
+api.post("/v1/messages", ProxyEndpoint)  // Claude API endpoint

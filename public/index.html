@@ -1,3096 +1,590 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AWSL One API 管理面板</title>
-    <link rel="icon"
-        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
-    <style>
-        /* === CSS Custom Properties === */
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --primary-color: #6366f1;
-            --primary-dark: #4f46e5;
-            --primary-light: #818cf8;
-            --secondary-color: #8b5cf6;
-            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-            --success-color: #10b981;
-            --success-light: #d1fae5;
-            --warning-color: #f59e0b;
-            --warning-light: #fef3c7;
-            --danger-color: #ef4444;
-            --danger-light: #fee2e2;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --text-muted: #94a3b8;
-            --bg-primary: #f8fafc;
-            --bg-secondary: #f1f5f9;
-            --bg-card: rgba(255, 255, 255, 0.9);
-            --border-color: #e2e8f0;
-            --border-light: #f1f5f9;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-            --shadow-glow: 0 0 40px rgba(99, 102, 241, 0.15);
-            --radius-sm: 8px;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --radius-xl: 24px;
-            --transition-fast: 0.15s ease;
-            --transition-normal: 0.25s ease;
-            --transition-slow: 0.4s ease;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background: var(--primary-gradient);
-            background-attachment: fixed;
-            min-height: 100vh;
-            padding: 24px;
-            line-height: 1.6;
-        }
-
-        /* === Container === */
-        .container {
-            max-width: 1280px;
-            margin: 0 auto;
-            background: white;
-            border-radius: var(--radius-xl);
-            box-shadow: var(--shadow-xl), var(--shadow-glow);
-            overflow: hidden;
-        }
-
-        /* === Header === */
-        .header {
-            background: var(--accent-gradient);
-            color: white;
-            padding: 28px 32px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-            opacity: 0.5;
-        }
-
-        .header.compact {
-            padding: 18px 24px;
-        }
-
-        .header h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 8px;
-            position: relative;
-            letter-spacing: -0.025em;
-        }
-
-        .header.compact h1 {
-            font-size: 1.5rem;
-            margin-bottom: 4px;
-        }
-
-        .header p {
-            margin-bottom: 0;
-            opacity: 0.9;
-            font-weight: 400;
-            position: relative;
-        }
-
-        .header.compact p {
-            font-size: 0.875rem;
-        }
-
-        .header-info {
-            position: absolute;
-            top: 18px;
-            left: 24px;
-            font-size: 13px;
-            opacity: 0.85;
-            z-index: 1;
-        }
-
-        .header-info a {
-            color: white;
-            text-decoration: none;
-            margin-right: 16px;
-            transition: opacity var(--transition-fast);
-            font-weight: 500;
-        }
-
-        .header-info a:hover {
-            opacity: 1;
-            text-decoration: none;
-        }
-
-        .header-info span {
-            background: rgba(255, 255, 255, 0.2);
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-        }
-
-        /* === Auth Section === */
-        .auth-section {
-            padding: 80px 24px;
-            background: var(--bg-secondary);
-            text-align: center;
-        }
-
-        .auth-container {
-            max-width: 440px;
-            margin: 0 auto;
-            background: white;
-            padding: 48px 40px;
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-xl);
-            border: 1px solid var(--border-light);
-        }
-
-        .auth-title {
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: 32px;
-            color: var(--text-primary);
-            letter-spacing: -0.025em;
-        }
-
-        .auth-input {
-            width: 100%;
-            padding: 16px 18px;
-            border: 2px solid var(--border-color);
-            border-radius: var(--radius-md);
-            margin-bottom: 20px;
-            font-size: 15px;
-            transition: all var(--transition-normal);
-            background: var(--bg-primary);
-        }
-
-        .auth-input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-            background: white;
-        }
-
-        .auth-btn {
-            width: 100%;
-            padding: 16px;
-            background: var(--accent-gradient);
-            color: white;
-            border: none;
-            border-radius: var(--radius-md);
-            font-size: 15px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all var(--transition-normal);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .auth-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .auth-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.35);
-        }
-
-        .auth-btn:hover::before {
-            left: 100%;
-        }
-
-        .auth-btn:active {
-            transform: translateY(0);
-        }
-
-        /* === Tabs === */
-        .tabs {
-            display: flex;
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border-color);
-            padding: 4px;
-            gap: 4px;
-        }
-
-        .tab {
-            flex: 1;
-            padding: 14px 20px;
-            text-align: center;
-            cursor: pointer;
-            border: none;
-            background: transparent;
-            font-size: 14px;
-            font-weight: 500;
-            transition: all var(--transition-normal);
-            border-radius: var(--radius-sm);
-            color: var(--text-secondary);
-            position: relative;
-        }
-
-        .tab.active {
-            background: white;
-            color: var(--primary-color);
-            font-weight: 600;
-            box-shadow: var(--shadow-sm);
-        }
-
-        .tab:hover:not(.active) {
-            background: rgba(99, 102, 241, 0.05);
-            color: var(--primary-color);
-        }
-
-        .tab-content {
-            display: none;
-            padding: 32px;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(8px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* === Buttons === */
-        .btn {
-            background: var(--accent-gradient);
-            color: white;
-            border: none;
-            padding: 10px 18px;
-            border-radius: var(--radius-sm);
-            cursor: pointer;
-            font-size: 13px;
-            font-weight: 600;
-            transition: all var(--transition-normal);
-            margin: 4px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 0;
-            height: 0;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50%;
-            transform: translate(-50%, -50%);
-            transition: width 0.4s ease, height 0.4s ease;
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.35);
-        }
-
-        .btn:hover::before {
-            width: 200%;
-            height: 200%;
-        }
-
-        .btn:active {
-            transform: translateY(0);
-        }
-
-        .btn-secondary {
-            background: transparent;
-            color: var(--primary-color);
-            border: 2px solid var(--primary-color);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(99, 102, 241, 0.08);
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.15);
-        }
-
-        .btn-secondary.btn-warning {
-            background: transparent;
-            color: var(--warning-color);
-            border: 2px solid var(--warning-color);
-        }
-
-        .btn-secondary.btn-warning:hover {
-            background: rgba(245, 158, 11, 0.08);
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.2);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-        }
-
-        .btn-danger:hover {
-            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.35);
-        }
-
-        .btn-warning {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-        }
-
-        .btn-warning:hover {
-            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
-        }
-
-        /* === Form Elements === */
-        .form-group {
-            margin-bottom: 24px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: var(--text-primary);
-            font-size: 14px;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 12px 16px;
-            border: 2px solid var(--border-color);
-            border-radius: var(--radius-sm);
-            font-size: 14px;
-            transition: all var(--transition-normal);
-            background: var(--bg-primary);
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
-            background: white;
-        }
-
-        select.form-control {
-            cursor: pointer;
-            background-color: var(--bg-primary);
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 12px center;
-            padding-right: 36px;
-            appearance: none;
-        }
-
-        textarea.form-control {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        /* === Cards === */
-        .card {
-            background: white;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-lg);
-            padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: var(--shadow-md);
-            transition: all var(--transition-normal);
-        }
-
-        .card:hover {
-            box-shadow: var(--shadow-lg);
-        }
-
-        .card-header {
-            border-bottom: 1px solid var(--border-light);
-            padding-bottom: 16px;
-            margin-bottom: 24px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 12px;
-        }
-
-        .card-header div {
-            display: flex;
-            gap: 8px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .card-title {
-            font-size: 1.25rem;
-            font-weight: 700;
-            color: var(--text-primary);
-            letter-spacing: -0.025em;
-        }
-
-        /* === Item List === */
-        .item-list {
-            max-height: 480px;
-            overflow-y: auto;
-            padding-right: 4px;
-        }
-
-        .item-list::-webkit-scrollbar {
-            width: 6px;
-        }
-
-        .item-list::-webkit-scrollbar-track {
-            background: var(--bg-secondary);
-            border-radius: 3px;
-        }
-
-        .item-list::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 3px;
-        }
-
-        .item-list::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
-        }
-
-        .item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 18px 20px;
-            border: 1px solid var(--border-light);
-            border-radius: var(--radius-md);
-            margin-bottom: 12px;
-            background: var(--bg-primary);
-            transition: all var(--transition-normal);
-        }
-
-        .item:hover {
-            border-color: var(--primary-light);
-            background: white;
-            box-shadow: var(--shadow-sm);
-            transform: translateX(4px);
-        }
-
-        .item-info {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .item-key {
-            font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 6px;
-            font-size: 15px;
-        }
-
-        .item-details {
-            font-size: 13px;
-            color: var(--text-secondary);
-            line-height: 1.5;
-        }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-            flex-shrink: 0;
-        }
-
-        .copy-btn {
-            background: none;
-            border: none;
-            color: var(--primary-color);
-            cursor: pointer;
-            font-size: 12px;
-            margin-left: 5px;
-            padding: 4px 8px;
-            border-radius: var(--radius-sm);
-            transition: all var(--transition-fast);
-        }
-
-        .copy-btn:hover {
-            background-color: rgba(99, 102, 241, 0.1);
-        }
-
-        #tokenKeyActions {
-            display: flex;
-            gap: 8px;
-        }
-
-        #tokenKeyActions .btn {
-            white-space: nowrap;
-            min-width: 80px;
-            flex-shrink: 0;
-        }
-
-        /* === Alerts === */
-        .alert {
-            padding: 16px 20px;
-            border-radius: var(--radius-md);
-            margin-bottom: 20px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .alert.alert-top {
-            position: fixed;
-            top: 24px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 9999;
-            max-width: 480px;
-            min-width: 320px;
-            margin-bottom: 0;
-            box-shadow: var(--shadow-xl);
-            animation: slideInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            text-align: left;
-            backdrop-filter: blur(10px);
-        }
-
-        @keyframes slideInDown {
-            from {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-30px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0) scale(1);
-            }
-        }
-
-        .alert-success {
-            background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%);
-            color: #065f46;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-
-        .alert-error {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
-            color: #991b1b;
-            border: 1px solid rgba(239, 68, 68, 0.3);
-        }
-
-        .loading {
-            text-align: center;
-            padding: 48px;
-            color: var(--text-secondary);
-        }
-
-        /* === Loading Overlay === */
-        #loadingOverlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(8px);
-            z-index: 10002;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            color: white;
-            opacity: 0;
-            transition: opacity var(--transition-normal);
-            pointer-events: auto;
-            cursor: wait;
-        }
-
-        #mainContent.loading-active {
-            position: relative;
-            pointer-events: none;
-        }
-
-        #mainContent.loading-active #loadingOverlay {
-            pointer-events: auto;
-        }
-
-        #loadingOverlay .spinner {
-            width: 48px;
-            height: 48px;
-            border: 3px solid rgba(255, 255, 255, 0.2);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-bottom: 16px;
-        }
-
-        #loadingOverlay p {
-            margin-top: 8px;
-            font-size: 15px;
-            font-weight: 500;
-            opacity: 0.9;
-        }
-
-        .spinner {
-            border: 3px solid var(--border-color);
-            border-top: 3px solid var(--primary-color);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            animation: spin 0.8s linear infinite;
-            margin: 0 auto 16px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-        }
-
-        /* === Grid === */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 24px;
-        }
-
-        /* === Pricing Table === */
-        .pricing-table {
-            overflow-x: auto;
-            border-radius: var(--radius-md);
-        }
-
-        .pricing-table table {
-            min-width: 600px;
-            border-collapse: separate;
-            border-spacing: 0;
-        }
-
-        .pricing-table thead tr {
-            background: var(--bg-secondary);
-        }
-
-        .pricing-table th {
-            padding: 14px 16px;
-            text-align: left;
-            font-weight: 600;
-            color: var(--text-primary);
-            border-bottom: 2px solid var(--border-color);
-            font-size: 13px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .pricing-table td {
-            padding: 12px 16px;
-            border-bottom: 1px solid var(--border-light);
-        }
-
-        .pricing-table input[type="text"],
-        .pricing-table input[type="number"] {
-            width: 100%;
-            border: none;
-            background: transparent;
-            padding: 10px 12px;
-            font-size: 14px;
-            border-radius: var(--radius-sm);
-            transition: all var(--transition-fast);
-        }
-
-        .pricing-table input[type="text"]:focus,
-        .pricing-table input[type="number"]:focus {
-            outline: none;
-            background: white;
-            box-shadow: 0 0 0 2px var(--primary-color);
-        }
-
-        .pricing-table tr:hover td {
-            background-color: var(--bg-primary);
-        }
-
-        /* === Modal === */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 10000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(15, 23, 42, 0.6);
-            backdrop-filter: blur(8px);
-        }
-
-        .modal-content {
-            background-color: white;
-            margin: 8% auto;
-            padding: 0;
-            border-radius: var(--radius-lg);
-            width: 90%;
-            max-width: 480px;
-            box-shadow: var(--shadow-xl), 0 0 60px rgba(99, 102, 241, 0.15);
-            animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            overflow: hidden;
-        }
-
-        @keyframes modalSlideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-40px) scale(0.95);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .modal-header {
-            background: var(--accent-gradient);
-            color: white;
-            padding: 24px 28px;
-            position: relative;
-        }
-
-        .modal-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin: 0;
-            letter-spacing: -0.025em;
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 50%;
-            right: 20px;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.15);
-            border: none;
-            color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            font-size: 20px;
-            cursor: pointer;
-            transition: all var(--transition-fast);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal-close:hover {
-            background: rgba(255, 255, 255, 0.25);
-            transform: translateY(-50%) scale(1.1);
-        }
-
-        .modal-body {
-            padding: 32px 28px;
-        }
-
-        /* === Feature Cards on Home === */
-        .feature-card {
-            border-radius: var(--radius-md);
-            padding: 24px;
-            transition: all var(--transition-normal);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .feature-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 100%);
-            opacity: 0;
-            transition: opacity var(--transition-normal);
-        }
-
-        .feature-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
-        }
-
-        .feature-card:hover::before {
-            opacity: 1;
-        }
-
-        /* === Quick Start Section === */
-        .quick-start {
-            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
-            padding: 24px;
-            border-radius: var(--radius-md);
-            border-left: 4px solid var(--primary-color);
-        }
-
-        .quick-start h4 {
-            color: var(--text-primary);
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 16px;
-        }
-
-        .quick-start ol {
-            margin: 0;
-            padding-left: 20px;
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-
-        .quick-start li {
-            margin-bottom: 10px;
-            line-height: 1.6;
-        }
-
-        .quick-start li:last-child {
-            margin-bottom: 0;
-        }
-
-        /* === Responsive === */
-        @media (max-width: 768px) {
-            body {
-                padding: 12px;
-            }
-
-            .container {
-                border-radius: var(--radius-lg);
-            }
-
-            .grid {
-                grid-template-columns: 1fr;
-            }
-
-            .tabs {
-                flex-direction: column;
-                padding: 8px;
-            }
-
-            .tab {
-                padding: 12px 16px;
-            }
-
-            .tab-content {
-                padding: 20px;
-            }
-
-            .item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 12px;
-            }
-
-            .actions {
-                width: 100%;
-                justify-content: flex-start;
-            }
-
-            .auth-container {
-                margin: 0 12px;
-                padding: 32px 24px;
-            }
-
-            .header-info {
-                position: static;
-                text-align: center;
-                margin-bottom: 12px;
-            }
-
-            .header h1 {
-                font-size: 1.5rem;
-            }
-
-            .header.compact h1 {
-                font-size: 1.25rem;
-            }
-
-            .auth-section {
-                padding: 48px 16px;
-            }
-
-            .card-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .card-header div {
-                width: 100%;
-                justify-content: flex-start;
-            }
-
-            #loginPrompt > div {
-                flex-direction: column !important;
-                gap: 12px !important;
-            }
-
-            #loginPrompt > div > div:last-child {
-                width: 100%;
-                text-align: center;
-            }
-
-            #loginPrompt > div > div:first-child {
-                min-width: auto !important;
-                text-align: center;
-            }
-        }
-
-        /* === Utility Classes === */
-        .text-gradient {
-            background: var(--accent-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        .glass {
-            background: rgba(255, 255, 255, 0.7);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-        }
-
-        /* === Smooth Scrollbar === */
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-
-        ::-webkit-scrollbar-track {
-            background: var(--bg-secondary);
-        }
-
-        ::-webkit-scrollbar-thumb {
-            background: var(--border-color);
-            border-radius: 4px;
-        }
-
-        ::-webkit-scrollbar-thumb:hover {
-            background: var(--text-muted);
-        }
-
-        /* === Selection === */
-        ::selection {
-            background: rgba(99, 102, 241, 0.2);
-            color: var(--text-primary);
-        }
-    </style>
+    <title>AWSL One API - 管理控制台</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
-
 <body>
-    <div class="container">
-        <div class="header" id="mainHeader">
-            <div class="header-info">
-                <a href="https://github.com/dreamhunter2333/awsl-one-api" target="_blank">🔗 GitHub</a>
-                <span>v1.0.0</span>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-brand">
+                    <span>🤖</span>
+                    <span>AWSL One API</span>
+                </div>
             </div>
-            <h1>🚀 Awsl One API</h1>
-            <p>管理面板 - 频道、令牌、定价管理</p>
-            <div id="logoutSection" style="display: none; position: absolute; top: 20px; right: 20px;">
-                <button class="btn btn-secondary btn-warning" onclick="confirmLogout()"
-                    style="font-size: 12px; padding: 8px 16px;">
-                    🚪 退出登录
+
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <div class="nav-section-title">主菜单</div>
+                    <button class="nav-item active" onclick="switchTab('dashboard')" data-tab="dashboard">
+                        <span class="nav-item-icon">📊</span>
+                        <span>仪表盘</span>
+                    </button>
+                    <button class="nav-item" onclick="switchTab('api-test')" data-tab="api-test">
+                        <span class="nav-item-icon">🧪</span>
+                        <span>API 测试</span>
+                    </button>
+                </div>
+
+                <div class="nav-section admin-only hidden">
+                    <div class="nav-section-title">管理</div>
+                    <button class="nav-item" onclick="switchTab('channels')" data-tab="channels">
+                        <span class="nav-item-icon">🔗</span>
+                        <span>频道管理</span>
+                    </button>
+                    <button class="nav-item" onclick="switchTab('tokens')" data-tab="tokens">
+                        <span class="nav-item-icon">🔑</span>
+                        <span>令牌管理</span>
+                    </button>
+                    <button class="nav-item" onclick="switchTab('pricing')" data-tab="pricing">
+                        <span class="nav-item-icon">💰</span>
+                        <span>定价管理</span>
+                    </button>
+                </div>
+
+                <div class="nav-section admin-only hidden">
+                    <div class="nav-section-title">系统</div>
+                    <button class="nav-item" onclick="switchTab('database')" data-tab="database">
+                        <span class="nav-item-icon">🗄️</span>
+                        <span>数据库</span>
+                    </button>
+                </div>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div style="padding: 0.75rem 1rem; border-top: 1px solid hsl(var(--border)); display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem; color: hsl(var(--muted-foreground)); margin-bottom: 0.75rem;">
+                    <a href="https://github.com/dreamhunter2333/awsl-one-api" target="_blank" style="color: hsl(var(--primary)); text-decoration: none; display: flex; align-items: center; gap: 0.25rem; transition: opacity 0.2s;">
+                        🔗 GitHub
+                    </a>
+                    <span>v1.0.0</span>
+                </div>
+                <button class="btn btn-outline w-full" onclick="toggleTheme()" style="justify-content: center; margin-bottom: 0.5rem;">
+                    <span id="themeIcon">🌙</span>
+                    <span style="margin-left: 0.5rem;">切换主题</span>
+                </button>
+                <button class="btn btn-outline w-full" onclick="toggleAuthModal()" id="authButton">
+                    🔑 管理员登录
                 </button>
             </div>
-        </div>
+        </aside>
 
-        <div id="authSection" class="auth-section" style="display: none;">
-            <div class="auth-container">
-                <div class="auth-title">管理员登录</div>
-                <form onsubmit="handleLogin(event)">
-                    <input type="password" id="adminToken" class="auth-input" placeholder="请输入管理员令牌" />
-                    <button type="submit" class="auth-btn">登录</button>
-                </form>
-            </div>
-        </div>
-
-        <!-- 登录模态框 -->
-        <div id="loginModal" class="modal">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h3 class="modal-title">🔐 管理员登录</h3>
-                    <button class="modal-close" onclick="closeLoginModal()">&times;</button>
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="main-header">
+                <div class="header-content">
+                    <h1 class="header-title" id="pageTitle">仪表盘</h1>
                 </div>
-                <div class="modal-body">
-                    <form onsubmit="handleModalLogin(event)">
-                        <div class="form-group">
-                            <label for="modalAdminToken">管理员令牌</label>
-                            <input type="password" id="modalAdminToken" class="form-control" placeholder="请输入管理员令牌"
-                                autocomplete="off" />
-                        </div>
-                        <button type="submit" class="btn" style="width: 100%; margin: 0;">
-                            🔑 登录
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
+            </header>
 
-        <div id="mainContent">
-            <div class="tabs">
-                <button class="tab" onclick="switchTab('home')">🏠 首页</button>
-                <button class="tab admin-only" onclick="switchTab('system')" style="display: none;">⚙️ 系统管理</button>
-                <button class="tab admin-only" onclick="switchTab('channels')" style="display: none;">🔗 频道管理</button>
-                <button class="tab admin-only" onclick="switchTab('tokens')" style="display: none;">🔑 令牌管理</button>
-                <button class="tab admin-only" onclick="switchTab('pricing')" style="display: none;">💰 定价管理</button>
-                <button class="tab admin-only" onclick="switchTab('api-test')" style="display: none;">🧪 API 测试</button>
-            </div>
-
-            <!-- Home Tab -->
-            <div id="home" class="tab-content">
-                <!-- 未登录时的登录提示 -->
-                <div id="loginPrompt" class="card"
-                    style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%); border-left: 4px solid var(--warning-color); margin-bottom: 24px; padding: 18px 20px; border-color: rgba(245, 158, 11, 0.2);">
-                    <div
-                        style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-                        <div style="flex: 1; min-width: 200px;">
-                            <p style="margin: 0; color: #92400e; font-size: 14px; font-weight: 500; display: flex; align-items: center; gap: 8px;">
-                                <span style="font-size: 18px;">💡</span> 要使用管理功能，请先进行身份验证
-                            </p>
-                        </div>
-                        <div style="flex-shrink: 0;">
-                            <button class="btn" onclick="showLoginModal()"
-                                style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; margin: 0; font-size: 13px; padding: 10px 18px;">
-                                🔑 立即登录
+            <div class="content-wrapper">
+                <!-- Dashboard Tab -->
+                <div id="dashboard" class="tab-content active">
+                    <div class="alert alert-info mb-6" id="loginPrompt">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <strong>💡 提示</strong>
+                                <p class="text-sm mt-1">要使用管理功能，请先进行身份验证</p>
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="toggleAuthModal()">
+                                立即登录
                             </button>
                         </div>
                     </div>
-                </div>
 
-                <!-- 主要内容区域 -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title" style="display: flex; align-items: center; gap: 10px;">
-                            <span style="font-size: 24px;">🚀</span> 欢迎使用 AWSL One API
-                        </h3>
-                    </div>
-                    <div style="margin-bottom: 32px;">
-                        <p style="font-size: 16px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 24px;">
-                            AWSL One API 是一个强大的 API 代理和管理平台，为您提供统一的 AI 模型接口管理服务。
-                        </p>
+                    <div class="card mb-6">
+                        <div class="card-header">
+                            <h2 class="card-title">欢迎使用 AWSL One API</h2>
+                            <p class="card-description">统一的 AI 模型接口管理服务</p>
+                        </div>
+                        <div class="card-content">
+                            <p class="mb-6">
+                                AWSL One API 是一个强大的 API 代理和管理平台，为您提供统一的 AI 模型接口管理服务。
+                            </p>
 
-                        <div class="grid" style="margin-bottom: 32px;">
-                            <div class="card feature-card"
-                                style="margin-bottom: 0; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; border: none;">
-                                <h4 style="color: white; margin-bottom: 12px; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 20px;">🔗</span> 频道管理
-                                </h4>
-                                <p style="margin: 0; opacity: 0.9; font-size: 14px; line-height: 1.6;">配置和管理 AI 服务提供商的 API 端点，支持 Azure OpenAI 等多种平台。</p>
-                            </div>
-                            <div class="card feature-card"
-                                style="margin-bottom: 0; background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%); color: white; border: none;">
-                                <h4 style="color: white; margin-bottom: 12px; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 20px;">🔑</span> 令牌管理
-                                </h4>
-                                <p style="margin: 0; opacity: 0.9; font-size: 14px; line-height: 1.6;">生成和管理 API 访问令牌，控制用户访问权限和使用配额。</p>
-                            </div>
-                            <div class="card feature-card"
-                                style="margin-bottom: 0; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
-                                <h4 style="color: white; margin-bottom: 12px; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 20px;">💰</span> 定价管理
-                                </h4>
-                                <p style="margin: 0; opacity: 0.9; font-size: 14px; line-height: 1.6;">灵活配置不同 AI 模型的计费策略，精确控制使用成本。</p>
-                            </div>
-                            <div class="card feature-card"
-                                style="margin-bottom: 0; background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%); color: white; border: none;">
-                                <h4 style="color: white; margin-bottom: 12px; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                                    <span style="font-size: 20px;">🧪</span> API 测试
-                                </h4>
-                                <p style="margin: 0; opacity: 0.9; font-size: 14px; line-height: 1.6;">内置 API 测试工具，快速验证配置和调试接口问题。</p>
+                            <h3 class="font-semibold mb-4">核心特性</h3>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div class="card">
+                                    <div class="card-content">
+                                        <h4 class="font-semibold mb-2">🌐 多提供商支持</h4>
+                                        <p class="text-sm text-muted">支持 OpenAI、Azure OpenAI 和 Claude API，轻松切换不同的 AI 服务。</p>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div class="card-content">
+                                        <h4 class="font-semibold mb-2">⚖️ 负载均衡</h4>
+                                        <p class="text-sm text-muted">自动在多个频道间分配请求，确保服务稳定性和高可用性。</p>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div class="card-content">
+                                        <h4 class="font-semibold mb-2">📊 用量追踪</h4>
+                                        <p class="text-sm text-muted">实时监控 token 使用情况，精确计算成本，防止超出配额。</p>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div class="card-content">
+                                        <h4 class="font-semibold mb-2">🔐 安全管理</h4>
+                                        <p class="text-sm text-muted">基于令牌的访问控制，为不同用户分配独立的 API 密钥。</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="quick-start">
-                            <h4>⚡ 快速开始</h4>
-                            <ol>
-                                <li>首先初始化数据库以设置必要的数据表结构</li>
-                                <li>在频道管理中添加您的 AI 服务提供商配置</li>
-                                <li>创建访问令牌并设置适当的权限和配额</li>
-                                <li>配置模型定价策略以控制使用成本</li>
-                                <li>使用 API 测试工具验证配置是否正常工作</li>
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">快速开始</h3>
+                            <p class="card-description">按照以下步骤开始使用</p>
+                        </div>
+                        <div class="card-content">
+                            <ol style="list-style: decimal; padding-left: 1.5rem; line-height: 2;">
+                                <li><strong>管理员登录：</strong>使用管理员令牌登录系统</li>
+                                <li><strong>配置频道：</strong>添加 OpenAI、Azure 或 Claude API 频道</li>
+                                <li><strong>创建令牌：</strong>为您的应用创建 API 令牌</li>
+                                <li><strong>开始使用：</strong>使用生成的令牌调用 API</li>
                             </ol>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <!-- System Management Tab -->
-            <div id="system" class="tab-content">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">⚙️ 系统管理</h3>
-                    </div>
-                    <p style="color: #4a5568; margin-bottom: 20px;">管理系统数据库，包括初始化表结构等操作。如果这是首次使用，请先进行数据库初始化。</p>
-                    <button class="btn" onclick="initializeDatabase()">🔄 初始化数据库</button>
-                </div>
-            </div>
-
-            <!-- Channels Tab -->
-            <div id="channels" class="tab-content">
-                <!-- Channel List View -->
-                <div id="channelListView">
+                <!-- API Test Tab -->
+                <div id="api-test" class="tab-content">
                     <div class="card">
                         <div class="card-header">
-                            <h3 class="card-title">频道列表</h3>
-                            <div>
-                                <button class="btn" onclick="showChannelForm()">➕ 添加频道</button>
-                                <button class="btn btn-secondary" onclick="loadChannels()">🔄 刷新</button>
-                            </div>
+                            <h2 class="card-title">API 测试</h2>
+                            <p class="card-description">测试您的 API 连接和配置</p>
                         </div>
-                        <div id="channelsList" class="item-list"></div>
-                    </div>
-                </div>
+                        <div class="card-content">
+                            <form id="apiTestForm" onsubmit="testAPI(event)">
+                                <div class="grid grid-cols-2">
+                                    <div class="form-group">
+                                        <label class="label">API 端点</label>
+                                        <select class="input" id="testEndpoint" onchange="updateRequestTemplate()">
+                                            <option value="/v1/chat/completions">/v1/chat/completions</option>
+                                            <option value="/v1/messages">/v1/messages</option>
+                                            <option value="/v1/completions">/v1/completions</option>
+                                        </select>
+                                    </div>
 
-                <!-- Channel Form View -->
-                <div id="channelFormView" style="display: none;">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title" id="channelFormTitle">添加频道</h3>
-                            <div>
-                                <button class="btn btn-secondary" onclick="toggleChannelEditMode()"
-                                    id="channelModeToggle">📝
-                                    切换到JSON模式</button>
-                                <button class="btn" onclick="saveChannel()">💾 保存频道</button>
-                                <button class="btn btn-secondary" onclick="showChannelList()">← 返回列表</button>
-                            </div>
-                        </div>
-
-                        <!-- 共用标识字段 -->
-                        <div class="form-group">
-                            <label for="channelKey">频道标识</label>
-                            <input type="text" id="channelKey" class="form-control" placeholder="例如: azure-openai-1">
-                        </div>
-
-                        <!-- 表单模式 -->
-                        <div id="channelFormMode">
-                            <div class="form-group">
-                                <label for="channelName">频道名称</label>
-                                <input type="text" id="channelName" class="form-control"
-                                    placeholder="例如: My OpenAI Channel">
-                            </div>
-                            <div class="form-group">
-                                <label for="channelType">频道类型</label>
-                                <select id="channelType" class="form-control" onchange="toggleApiVersionField()">
-                                    <option value="azure-openai">Azure OpenAI</option>
-                                    <option value="openai">OpenAI</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="channelEndpoint">API 端点</label>
-                                <input type="text" id="channelEndpoint" class="form-control"
-                                    placeholder="例如: https://xxx.openai.azure.com/">
-                            </div>
-                            <div class="form-group">
-                                <label for="channelApiKey">API 密钥</label>
-                                <input type="password" id="channelApiKey" class="form-control"
-                                    placeholder="your-api-key">
-                            </div>
-                            <div class="form-group" id="apiVersionGroup">
-                                <label for="channelApiVersion">API 版本</label>
-                                <input type="text" id="channelApiVersion" class="form-control"
-                                    placeholder="例如: 2024-02-01">
-                            </div>
-                            <div class="form-group">
-                                <label for="deploymentMapper">模型部署映射 (JSON)</label>
-                                <textarea id="deploymentMapper" class="form-control" rows="4"
-                                    placeholder='{"gpt-35-turbo": "gpt-35-turbo", "gpt-4": "gpt-4"}'></textarea>
-                                <small style="color: #666; font-size: 12px;">配置模型名称映射关系（主要用于Azure OpenAI）</small>
-                            </div>
-                            <div class="form-group">
-                                <label for="additionalConfig">其他配置 (JSON，可选)</label>
-                                <textarea id="additionalConfig" class="form-control" rows="3"
-                                    placeholder='{"timeout": 30, "max_retries": 3}'></textarea>
-                                <small style="color: #666; font-size: 12px;">其他自定义配置参数</small>
-                            </div>
-                        </div>
-
-                        <!-- JSON模式 -->
-                        <div id="channelJsonMode" style="display: none;">
-                            <div class="form-group">
-                                <label for="channelValueJson">频道配置 (JSON)</label>
-                                <textarea id="channelValueJson" class="form-control" rows="15"
-                                    placeholder='{"name": "Azure OpenAI", "type": "azure-openai", "endpoint": "https://xxx.openai.azure.com/", "api_key": "your-api-key", "api_version": "2024-02-01", "deployment_mapper": {"gpt-35-turbo": "gpt-35-turbo", "gpt-4": "gpt-4"}}'></textarea>
-                                <small style="color: #666; font-size: 12px;">直接编辑完整的频道配置JSON</small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tokens Tab -->
-            <div id="tokens" class="tab-content">
-                <!-- Token List View -->
-                <div id="tokenListView">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title">令牌列表</h3>
-                            <div>
-                                <button class="btn" onclick="showTokenForm()">➕ 添加令牌</button>
-                                <button class="btn btn-secondary" onclick="loadTokens()">🔄 刷新</button>
-                            </div>
-                        </div>
-                        <div id="tokensList" class="item-list"></div>
-                    </div>
-                </div>
-
-                <!-- Token Form View -->
-                <div id="tokenFormView" style="display: none;">
-                    <div class="card">
-                        <div class="card-header">
-                            <h3 class="card-title" id="tokenFormTitle">添加令牌</h3>
-                            <div>
-                                <button class="btn btn-secondary" onclick="toggleTokenEditMode()"
-                                    id="tokenModeToggle">📝
-                                    切换到JSON模式</button>
-                                <button class="btn" onclick="saveToken()">💾 保存令牌</button>
-                                <button class="btn btn-secondary" onclick="showTokenList()">← 返回列表</button>
-                            </div>
-                        </div>
-
-                        <!-- 共用标识字段 -->
-                        <div class="form-group">
-                            <label for="tokenKey">令牌标识</label>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <input type="text" id="tokenKey" class="form-control" placeholder="输入令牌标识或点击生成">
-                                <div id="tokenKeyActions">
-                                    <button type="button" id="generateTokenBtn" class="btn btn-secondary"
-                                        onclick="generateTokenKey()">🎲 生成</button>
-                                    <button type="button" id="copyTokenBtn" class="btn btn-secondary"
-                                        onclick="copyTokenKey()" style="display: none;">📋 复制</button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- 表单模式 -->
-                        <div id="tokenFormMode">
-                            <div class="form-group">
-                                <label for="tokenName">令牌名称</label>
-                                <input type="text" id="tokenName" class="form-control" placeholder="例如: 用户令牌1">
-                            </div>
-                            <div class="form-group">
-                                <label for="channelKeysInput">允许访问的频道</label>
-                                <input type="text" id="channelKeysInput" class="form-control"
-                                    placeholder="输入频道标识，多个用逗号分隔，留空表示允许所有频道">
-                                <small style="color: #666; font-size: 12px;">例如: azure-openai-1, azure-openai-2
-                                    (留空表示允许访问所有频道)</small>
-                            </div>
-                            <div class="form-group">
-                                <label for="totalQuotaInput">总配额</label>
-                                <input type="number" id="totalQuotaInput" class="form-control" placeholder="1000000"
-                                    min="0" step="1">
-                                <div style="margin-top: 10px;">
-                                    <small
-                                        style="color: #666; font-size: 12px; display: block; margin-bottom: 8px;">快速选择:</small>
-                                    <div style="display: flex; gap: 5px; flex-wrap: wrap;">
-                                        <button type="button" class="btn btn-secondary"
-                                            style="padding: 6px 12px; font-size: 12px; margin: 0;"
-                                            onclick="setQuotaValue(1000000)">$1</button>
-                                        <button type="button" class="btn btn-secondary"
-                                            style="padding: 6px 12px; font-size: 12px; margin: 0;"
-                                            onclick="setQuotaValue(5000000)">$5</button>
-                                        <button type="button" class="btn btn-secondary"
-                                            style="padding: 6px 12px; font-size: 12px; margin: 0;"
-                                            onclick="setQuotaValue(10000000)">$10</button>
-                                        <button type="button" class="btn btn-secondary"
-                                            style="padding: 6px 12px; font-size: 12px; margin: 0;"
-                                            onclick="setQuotaValue(20000000)">$20</button>
-                                        <button type="button" class="btn btn-secondary"
-                                            style="padding: 6px 12px; font-size: 12px; margin: 0;"
-                                            onclick="setQuotaValue(50000000)">$50</button>
+                                    <div class="form-group">
+                                        <label class="label">API 令牌</label>
+                                        <input type="text" class="input" id="testApiToken" placeholder="sk-..." required>
                                     </div>
                                 </div>
-                                <small style="color: #666; font-size: 12px; margin-top: 8px; display: block;">设置令牌的总使用配额
-                                    (基础单位：1百万token =
-                                    $1.00，例如：输入1000000表示1美元的配额)</small>
+
+                                <div class="form-group">
+                                    <label class="label">请求体 (JSON)</label>
+                                    <textarea class="input" id="testRequestBody" rows="12" placeholder='{"model": "gpt-3.5-turbo", "messages": [...]}'></textarea>
+                                    <p class="text-sm text-muted mt-1">直接编辑 JSON 格式的请求体</p>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary" id="testSubmitBtn">
+                                    🚀 发送请求
+                                </button>
+                            </form>
+
+                            <div id="testResult" class="hidden" style="margin-top: 1.5rem;">
+                                <div class="flex items-center justify-between mb-3">
+                                    <h3 class="font-semibold">响应结果</h3>
+                                    <div class="flex gap-2">
+                                        <span class="badge badge-secondary" id="testStatusBadge">等待中</span>
+                                        <span class="badge badge-outline" id="testTimeBadge">0ms</span>
+                                    </div>
+                                </div>
+                                <div class="card">
+                                    <div class="card-content">
+                                        <pre id="testResultContent" style="white-space: pre-wrap; word-wrap: break-word; font-size: 0.875rem; line-height: 1.6; max-height: 500px; overflow-y: auto;"></pre>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Channels Tab -->
+                <div id="channels" class="tab-content">
+                    <!-- Channel List View -->
+                    <div id="channelListView">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="flex gap-2">
+                                    <button class="btn btn-primary" onclick="showChannelForm()">➕ 添加频道</button>
+                                    <button class="btn btn-secondary" onclick="loadChannels()">🔄 刷新</button>
+                                </div>
+                            </div>
+                            <div id="channelsList" class="item-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Channel Form View -->
+                    <div id="channelFormView" style="display: none;">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title" id="channelFormTitle">添加频道</h3>
+                                <div class="flex gap-2">
+                                    <button class="btn btn-secondary" onclick="toggleChannelEditMode()" id="channelModeToggle">📝 切换到JSON模式</button>
+                                    <button class="btn btn-primary" onclick="saveChannel()">💾 保存频道</button>
+                                    <button class="btn btn-secondary" onclick="showChannelList()">← 返回列表</button>
+                                </div>
+                            </div>
+
+                            <div class="card-content">
+                                <!-- Common Key Field -->
+                                <div class="form-group">
+                                    <label for="channelKey">频道标识</label>
+                                    <input type="text" id="channelKey" class="input" placeholder="例如: azure-openai-1">
+                                </div>
+
+                                <!-- Form Mode -->
+                                <div id="channelFormMode">
+                                    <div class="form-group">
+                                        <label for="channelName">频道名称</label>
+                                        <input type="text" id="channelName" class="input" placeholder="例如: Azure OpenAI">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="channelType">频道类型</label>
+                                        <select id="channelType" class="input">
+                                            <option value="azure-openai">Azure OpenAI</option>
+                                            <option value="openai">OpenAI</option>
+                                            <option value="claude">Claude</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="channelEndpoint">API 端点</label>
+                                        <input type="text" id="channelEndpoint" class="input" placeholder="https://your-resource.openai.azure.com/">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="channelApiKey">API 密钥</label>
+                                        <input type="password" id="channelApiKey" class="input" placeholder="your-api-key">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="channelApiVersion">API 版本（可选）</label>
+                                        <input type="text" id="channelApiVersion" class="input" placeholder="例如: 2024-02-01">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="channelMapperTable">模型部署映射</label>
+                                        <div style="margin-bottom: 0.5rem;">
+                                            <button type="button" class="btn btn-secondary btn-sm" onclick="window.addMapperRow()">➕ 添加映射</button>
+                                        </div>
+                                        <div class="table-container">
+                                            <table class="table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>请求模型名</th>
+                                                        <th>部署模型名</th>
+                                                        <th style="width: 100px; text-align: center;">操作</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="channelMapperTable">
+                                                    <tr>
+                                                        <td colspan="3" class="text-center text-muted">暂无映射，点击上方按钮添加</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <p class="text-sm text-muted mt-1">配置模型名称映射关系（主要用于Azure OpenAI）。留空表示不进行映射</p>
+                                    </div>
+                                </div>
+
+                                <!-- JSON Mode -->
+                                <div id="channelJsonMode" style="display: none;">
+                                    <div class="form-group">
+                                        <label for="channelValueJson">频道配置 (JSON)</label>
+                                        <textarea id="channelValueJson" class="input" rows="15" placeholder='{"name": "Azure OpenAI", "type": "azure-openai", "endpoint": "https://xxx.openai.azure.com/", "api_key": "your-api-key", "api_version": "2024-02-01", "deployment_mapper": {"gpt-35-turbo": "gpt-35-turbo", "gpt-4": "gpt-4"}}'></textarea>
+                                        <p class="text-sm text-muted mt-1">直接编辑完整的频道配置JSON</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tokens Tab -->
+                <div id="tokens" class="tab-content">
+                    <!-- Token List View -->
+                    <div id="tokenListView">
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="flex gap-2">
+                                    <button class="btn btn-primary" onclick="showTokenForm()">➕ 添加令牌</button>
+                                    <button class="btn btn-secondary" onclick="loadTokens()">🔄 刷新</button>
+                                </div>
+                            </div>
+                            <div id="tokensList" class="item-list"></div>
+                        </div>
+                    </div>
+
+                    <!-- Token Form View -->
+                    <div id="tokenFormView" style="display: none;">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3 class="card-title" id="tokenFormTitle">添加令牌</h3>
+                                <div class="flex gap-2">
+                                    <button class="btn btn-secondary" onclick="toggleTokenEditMode()" id="tokenModeToggle">📝 切换到JSON模式</button>
+                                    <button class="btn btn-primary" onclick="saveToken()">💾 保存令牌</button>
+                                    <button class="btn btn-secondary" onclick="showTokenList()">← 返回列表</button>
+                                </div>
+                            </div>
+
+                            <div class="card-content">
+                                <!-- Common Key Field -->
+                                <div class="form-group">
+                                    <label for="tokenKey">令牌标识</label>
+                                    <div class="flex gap-2">
+                                        <input type="text" id="tokenKey" class="input" placeholder="输入令牌标识或点击生成">
+                                        <button type="button" id="generateTokenBtn" class="btn btn-secondary" onclick="generateTokenKey()">🎲 生成</button>
+                                    </div>
+                                </div>
+
+                                <!-- Form Mode -->
+                                <div id="tokenFormMode">
+                                    <div class="form-group">
+                                        <label for="tokenName">令牌名称</label>
+                                        <input type="text" id="tokenName" class="input" placeholder="例如: 用户令牌1">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="channelKeysSelect">允许访问的频道</label>
+                                        <div class="multi-select-wrapper">
+                                            <div class="multi-select-trigger" id="channelSelectTrigger" onclick="window.toggleChannelDropdown()">
+                                                <span class="multi-select-value" id="channelSelectValue">请选择频道...</span>
+                                                <span class="multi-select-arrow">▼</span>
+                                            </div>
+                                            <div class="multi-select-dropdown hidden" id="channelSelectDropdown">
+                                                <div class="multi-select-search">
+                                                    <input type="text" class="input" placeholder="搜索频道..." id="channelSearchInput" oninput="window.filterChannels()">
+                                                </div>
+                                                <div class="multi-select-options" id="channelOptionsContainer">
+                                                    <div class="multi-select-loading">加载中...</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p class="text-sm text-muted mt-1">不选表示允许访问所有频道</p>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="totalQuotaInput">总配额</label>
+                                        <input type="number" id="totalQuotaInput" class="input" placeholder="1000000" min="0" step="1">
+                                        <div style="margin-top: 10px;">
+                                            <small class="text-sm text-muted" style="display: block; margin-bottom: 8px;">快速选择:</small>
+                                            <div style="display: flex; gap: 5px; flex-wrap: wrap;">
+                                                <button type="button" class="btn btn-secondary btn-sm" onclick="setQuotaValue(1000000)">$1</button>
+                                                <button type="button" class="btn btn-secondary btn-sm" onclick="setQuotaValue(5000000)">$5</button>
+                                                <button type="button" class="btn btn-secondary btn-sm" onclick="setQuotaValue(10000000)">$10</button>
+                                                <button type="button" class="btn btn-secondary btn-sm" onclick="setQuotaValue(20000000)">$20</button>
+                                                <button type="button" class="btn btn-secondary btn-sm" onclick="setQuotaValue(50000000)">$50</button>
+                                            </div>
+                                        </div>
+                                        <p class="text-sm text-muted mt-2">设置令牌的总使用配额 (基础单位：1百万token = $1.00，例如：输入1000000表示1美元的配额)</p>
+                                    </div>
+                                </div>
+
+                                <!-- JSON Mode -->
+                                <div id="tokenJsonMode" style="display: none;">
+                                    <div class="form-group">
+                                        <label for="tokenValueJson">令牌配置 (JSON)</label>
+                                        <textarea id="tokenValueJson" class="input" rows="10" placeholder='{"name": "用户令牌1", "channel_keys": ["azure-openai-1"], "total_quota": 1000000}'></textarea>
+                                        <p class="text-sm text-muted mt-1">直接编辑完整的令牌配置JSON</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pricing Tab -->
+                <div id="pricing" class="tab-content">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="flex gap-2">
+                                <button class="btn btn-secondary" onclick="togglePricingEditMode()" id="pricingModeToggle">📝 切换到JSON模式</button>
+                                <button class="btn btn-secondary" onclick="addPricingModel()" id="addPricingModelBtn">➕ 添加模型</button>
+                                <button class="btn btn-primary" onclick="savePricing(event)">💾 更新定价</button>
+                                <button class="btn btn-secondary" onclick="loadPricing()">🔄 刷新</button>
                             </div>
                         </div>
 
-                        <!-- JSON模式 -->
-                        <div id="tokenJsonMode" style="display: none;">
-                            <div class="form-group">
-                                <label for="tokenValueJson">令牌配置 (JSON)</label>
-                                <textarea id="tokenValueJson" class="form-control" rows="12"
-                                    placeholder='{"name": "用户令牌1", "channel_keys": ["azure-openai-1", "azure-openai-2"], "total_quota": 1000000}'></textarea>
-                                <small style="color: #666; font-size: 12px;">直接编辑完整的令牌配置JSON</small>
+                        <div class="card-content">
+                            <div style="background: hsl(var(--accent)); padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid hsl(var(--primary));">
+                                <h4 style="margin: 0 0 10px 0; color: hsl(var(--foreground)); font-size: 14px; font-weight: 600;">💡 定价说明</h4>
+                                <p style="margin: 0; font-size: 13px; color: hsl(var(--foreground)); line-height: 1.5;">
+                                    <strong>基础配额单位：1百万token = $1.00</strong> | 定价配置为不同模型相对于基础单位的倍率 | 例如：gpt-4的input倍率为30，表示1百万token消耗30美元配额
+                                </p>
+                            </div>
+
+                            <!-- Table Mode -->
+                            <div id="pricingTableMode">
+                                <div class="table-container">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>模型名称</th>
+                                                <th>输入倍率</th>
+                                                <th>输出倍率</th>
+                                                <th style="width: 100px; text-align: center;">操作</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="pricingTableBody">
+                                            <tr>
+                                                <td colspan="4" class="text-center text-muted">加载中...</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- JSON Mode -->
+                            <div id="pricingJsonMode" style="display: none;">
+                                <div class="form-group">
+                                    <label for="pricingConfigJson">定价配置 (JSON)</label>
+                                    <textarea class="input" id="pricingConfigJson" rows="15" placeholder='{"gpt-3.5-turbo": {"input": 0.001, "output": 0.002}, "gpt-4": {"input": 0.03, "output": 0.06}}'></textarea>
+                                    <p class="text-sm text-muted mt-2">配置格式：模型名称 -> {input: 输入倍率, output: 输出倍率}。倍率基于1百万token=$1.00计算</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Database Tab -->
+                <div id="database" class="tab-content">
+                    <div class="card">
+                        <div class="card-content">
+                            <div class="alert alert-warning mb-4">
+                                <strong>⚠️ 警告：</strong>
+                                <p class="text-sm mt-1">初始化数据库将创建必要的表结构。如果表已存在，操作将被忽略。</p>
+                            </div>
+
+                            <button class="btn btn-primary" onclick="initDatabase()">
+                                🗄️ 初始化数据库
+                            </button>
+
+                            <div id="dbResult" class="hidden" style="margin-top: 1.5rem;">
+                                <div class="card">
+                                    <div class="card-content">
+                                        <pre id="dbResultContent" style="white-space: pre-wrap; font-size: 0.875rem;"></pre>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </main>
+    </div>
 
-            <!-- Pricing Tab -->
-            <div id="pricing" class="tab-content">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">定价配置</h3>
-                        <div>
-                            <button class="btn btn-secondary" onclick="togglePricingEditMode()"
-                                id="pricingModeToggle">📝
-                                切换到JSON模式</button>
-                            <button class="btn btn-secondary" onclick="addPricingModel()" id="addPricingModelBtn">➕
-                                添加模型</button>
-                            <button class="btn" onclick="updatePricing()">💾 更新定价</button>
-                            <button class="btn btn-secondary" onclick="loadPricing()">🔄 刷新</button>
-                        </div>
-                    </div>
-                    <div
-                        style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #4c51bf;">
-                        <h4 style="margin: 0 0 10px 0; color: #2d3748; font-size: 14px;">💡 定价说明</h4>
-                        <p style="margin: 0; font-size: 13px; color: #4a5568; line-height: 1.5;">
-                            <strong>基础配额单位：1百万token = $1.00</strong> | 定价配置为不同模型相对于基础单位的倍率 |
-                            例如：gpt-4的input倍率为30，表示1百万token消耗30美元配额
-                        </p>
-                    </div>
-                    <div id="pricingContent">
-                        <!-- 表格模式 -->
-                        <div id="pricingTableMode" class="pricing-table">
-                            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                                <thead>
-                                    <tr style="background-color: #f8f9fa; border-bottom: 2px solid #e9ecef;">
-                                        <th
-                                            style="padding: 12px; text-align: left; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef;">
-                                            模型名称</th>
-                                        <th
-                                            style="padding: 12px; text-align: left; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef;">
-                                            输入倍率</th>
-                                        <th
-                                            style="padding: 12px; text-align: left; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef;">
-                                            输出倍率</th>
-                                        <th
-                                            style="padding: 12px; text-align: center; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef; width: 100px;">
-                                            操作</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="pricingTableBody">
-                                    <!-- 动态生成的定价行 -->
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <!-- JSON模式 -->
-                        <div id="pricingJsonMode" style="display: none;">
-                            <div class="form-group">
-                                <label for="pricingConfigJson">定价配置 (JSON)</label>
-                                <textarea id="pricingConfigJson" class="form-control" rows="15"
-                                    placeholder='{"gpt-3.5-turbo": {"input": 0.001, "output": 0.002}, "gpt-4": {"input": 0.03, "output": 0.06}}'></textarea>
-                                <small style="color: #666; font-size: 12px; margin-top: 8px; display: block;">
-                                    配置格式：模型名称 -> {input: 输入倍率, output: 输出倍率}。倍率基于1百万token=$1.00计算
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- Auth Modal -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">管理员身份验证</h2>
             </div>
-
-            <!-- API Test Tab -->
-            <div id="api-test" class="tab-content">
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">API 测试</h3>
-                        <div>
-                            <button class="btn" onclick="sendApiTest()">🚀 发送请求</button>
-                            <button class="btn btn-secondary" onclick="clearApiTest()">🧹 清空</button>
-                        </div>
+            <div class="modal-body">
+                <form id="authForm" onsubmit="authenticate(event)">
+                    <div class="form-group">
+                        <label class="label">管理员令牌</label>
+                        <input type="password" class="input" id="adminToken" placeholder="请输入管理员令牌" required>
                     </div>
-                    <div class="grid">
-                        <div>
-                            <div class="form-group">
-                                <label for="apiTestToken">Bearer Token</label>
-                                <input type="text" id="apiTestToken" class="form-control"
-                                    placeholder="输入你的 API Token (sk-...)">
-                                <small style="color: #666; font-size: 12px;">从令牌管理页面复制你的 API Token</small>
-                            </div>
-                            <div class="form-group">
-                                <label for="apiTestRequest">请求 JSON</label>
-                                <textarea id="apiTestRequest" class="form-control" rows="12" placeholder='输入请求 JSON...'>{
-  "model": "gpt-4",
-  "messages": [
-    {
-      "role": "user",
-      "content": "Hello, world!"
-    }
-  ]
-}</textarea>
-                                <small style="color: #666; font-size: 12px;">请求将发送到 /v1/chat/completions 端点</small>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="form-group">
-                                <label for="apiTestResponse">响应 JSON</label>
-                                <textarea id="apiTestResponse" class="form-control" rows="16"
-                                    placeholder="API 响应将显示在这里..." readonly></textarea>
-                                <div id="apiTestStatus"
-                                    style="margin-top: 10px; padding: 10px; border-radius: 6px; display: none;"></div>
-                            </div>
-                        </div>
+                    <div id="authError" class="alert alert-error hidden">
+                        <strong>❌ 错误：</strong>
+                        <p class="text-sm mt-1" id="authErrorMessage"></p>
                     </div>
-                </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="toggleAuthModal()">取消</button>
+                <button class="btn btn-primary" onclick="authenticate(event)">登录</button>
             </div>
         </div>
     </div>
 
-    <script>
-        // === 全局变量 ===
-        let adminToken = '';
-        let currentEditingChannel = null;
-        let currentEditingToken = null;
-
-        // === 通用工具函数 ===
-
-        // DOM元素操作工具类
-        const DOMUtils = {
-            // 获取元素并检查是否存在
-            getElement(id) {
-                const element = document.getElementById(id);
-                if (!element) {
-                    console.warn(`Element with id '${id}' not found`);
-                }
-                return element;
-            },
-
-            // 显示/隐藏元素
-            show(elementOrId) {
-                const element = typeof elementOrId === 'string' ? this.getElement(elementOrId) : elementOrId;
-                if (element) element.style.display = 'block';
-            },
-
-            hide(elementOrId) {
-                const element = typeof elementOrId === 'string' ? this.getElement(elementOrId) : elementOrId;
-                if (element) element.style.display = 'none';
-            },
-
-            // 切换class
-            toggleClass(elementOrId, className, force) {
-                const element = typeof elementOrId === 'string' ? this.getElement(elementOrId) : elementOrId;
-                if (element) {
-                    if (force !== undefined) {
-                        element.classList.toggle(className, force);
-                    } else {
-                        element.classList.toggle(className);
-                    }
-                }
-            },
-
-            // 清空输入框
-            clearInput(id) {
-                const element = this.getElement(id);
-                if (element) element.value = '';
-            },
-
-            // 设置输入框值
-            setValue(id, value) {
-                const element = this.getElement(id);
-                if (element) element.value = value || '';
-            },
-
-            // 获取输入框值
-            getValue(id) {
-                const element = this.getElement(id);
-                return element ? element.value.trim() : '';
-            },
-
-            // 聚焦元素
-            focus(id, delay = 0) {
-                const element = this.getElement(id);
-                if (element) {
-                    if (delay > 0) {
-                        setTimeout(() => element.focus(), delay);
-                    } else {
-                        element.focus();
-                    }
-                }
-            }
-        };
-
-        // 表单状态管理工具类
-        const FormUtils = {
-            // 设置输入框为只读状态
-            setReadonly(id, readonly = true) {
-                const element = DOMUtils.getElement(id);
-                if (element) {
-                    element.readOnly = readonly;
-                    element.disabled = readonly;
-                    element.style.cursor = readonly ? 'not-allowed' : 'text';
-                    element.style.backgroundColor = readonly ? '#f8f9fa' : '';
-                    element.placeholder = readonly ? '编辑时不可修改' : element.getAttribute('data-original-placeholder') || '';
-                }
-            },
-
-            // 保存原始placeholder
-            saveOriginalPlaceholder(id) {
-                const element = DOMUtils.getElement(id);
-                if (element && !element.getAttribute('data-original-placeholder')) {
-                    element.setAttribute('data-original-placeholder', element.placeholder);
-                }
-            },
-
-            // 验证必填字段
-            validateRequired(fields) {
-                for (const field of fields) {
-                    const value = DOMUtils.getValue(field.id);
-                    if (!value) {
-                        showAlert(field.message || `请填写${field.name}`, 'error');
-                        return false;
-                    }
-                }
-                return true;
-            },
-
-            // 验证JSON格式
-            validateJSON(jsonString, errorMessage = 'JSON格式错误') {
-                try {
-                    return JSON.parse(jsonString);
-                } catch (error) {
-                    showAlert(errorMessage, 'error');
-                    return null;
-                }
-            }
-        };
-
-        // Tab管理工具类
-        const TabUtils = {
-            // 激活tab
-            activateTab(tabName) {
-                // 隐藏所有tab内容
-                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-                document.querySelectorAll('.tab').forEach(btn => btn.classList.remove('active'));
-
-                // 显示目标tab
-                const targetTab = DOMUtils.getElement(tabName);
-                if (targetTab) targetTab.classList.add('active');
-
-                // 激活对应按钮
-                const targetButton = document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`);
-                if (targetButton) targetButton.classList.add('active');
-            },
-
-            // 设置管理员tabs可见性
-            setAdminTabsVisible(visible = true) {
-                document.querySelectorAll('.admin-only').forEach(tab => {
-                    tab.style.display = visible ? 'block' : 'none';
-                });
-            }
-        };
-
-        // 认证状态管理
-        const AuthManager = {
-            // 检查是否已登录
-            isAuthenticated() {
-                return !!adminToken;
-            },
-
-            // 设置token
-            setToken(token) {
-                adminToken = token;
-                localStorage.setItem('adminToken', token);
-            },
-
-            // 清除token
-            clearToken() {
-                adminToken = '';
-                localStorage.removeItem('adminToken');
-            },
-
-            // 从localStorage恢复token
-            restoreToken() {
-                const savedToken = localStorage.getItem('adminToken');
-                if (savedToken) {
-                    adminToken = savedToken;
-                    return true;
-                }
-                return false;
-            }
-        };
-
-        // === 认证相关函数 ===
-
-        // 显示登录模态框
-        function showLoginModal() {
-            DOMUtils.show('loginModal');
-            DOMUtils.clearInput('modalAdminToken');
-            DOMUtils.focus('modalAdminToken', 100);
-        }
-
-        // 关闭登录模态框
-        function closeLoginModal() {
-            DOMUtils.hide('loginModal');
-        }
-
-        // 处理模态框登录表单提交
-        function handleModalLogin(event) {
-            event.preventDefault();
-            authenticateFromModal();
-        }
-
-        // 模态框身份验证
-        function authenticateFromModal() {
-            const token = DOMUtils.getValue('modalAdminToken');
-            if (!token) {
-                showAlert('请输入管理员令牌', 'error');
-                return;
-            }
-
-            AuthManager.setToken(token);
-            closeLoginModal();
-            showMainContent();
-            showAlert('登录成功！', 'success');
-        }
-
-        // 显示登录页面 (保留兼容性)
-        function showLoginPage() {
-            showLoginModal();
-        }
-
-        // 显示主页面（未登录状态）
-        function showHomePage() {
-            DOMUtils.hide('authSection');
-            DOMUtils.show('mainContent');
-            DOMUtils.hide('logoutSection');
-            DOMUtils.toggleClass('mainHeader', 'compact', true);
-
-            // 显示登录提示
-            DOMUtils.show('loginPrompt');
-
-            // 隐藏管理员专用的tabs
-            TabUtils.setAdminTabsVisible(false);
-
-            // 激活首页tab
-            TabUtils.activateTab('home');
-        }
-
-        // 处理登录表单提交（支持回车键）
-        function handleLogin(event) {
-            event.preventDefault();
-            authenticate();
-        }
-
-        // Authentication
-        function authenticate() {
-            const token = DOMUtils.getValue('adminToken');
-            if (!token) {
-                showAlert('请输入管理员令牌', 'error');
-                return;
-            }
-
-            AuthManager.setToken(token);
-            showMainContent();
-        }
-
-        // 显示主内容区域（已登录状态）
-        function showMainContent() {
-            DOMUtils.hide('authSection');
-            DOMUtils.show('mainContent');
-            DOMUtils.show('logoutSection');
-            DOMUtils.toggleClass('mainHeader', 'compact', true);
-
-            // 隐藏登录提示
-            DOMUtils.hide('loginPrompt');
-
-            // 显示管理员专用的tabs
-            TabUtils.setAdminTabsVisible(true);
-
-            // 激活首页tab
-            TabUtils.activateTab('home');
-        }
-
-        // 确认退出登录
-        function confirmLogout() {
-            if (confirm('确定要退出登录吗？\n\n退出后您需要重新输入管理员令牌才能使用管理功能。')) {
-                logout();
-            }
-        }
-
-        // 退出登录
-        function logout() {
-            AuthManager.clearToken();
-            showHomePage();
-            DOMUtils.clearInput('adminToken');
-            showAlert('已退出登录', 'success');
-        }
-
-        // Tab switching
-        function switchTab(tabName) {
-            // 检查是否为管理员专用tab且用户未登录
-            const adminOnlyTabs = ['system', 'channels', 'tokens', 'pricing', 'api-test'];
-            if (adminOnlyTabs.includes(tabName) && !AuthManager.isAuthenticated()) {
-                showAlert('请先登录后再访问管理功能', 'error');
-                return;
-            }
-
-            // 隐藏所有表单视图，显示列表视图
-            if (tabName === 'channels') {
-                showChannelList();
-            } else if (tabName === 'tokens') {
-                showTokenList();
-            }
-
-            // 激活tab
-            TabUtils.activateTab(tabName);
-
-            // 切换tab时重新获取数据
-            const tabDataLoaders = {
-                'channels': loadChannels,
-                'tokens': loadTokens,
-                'pricing': loadPricing
-            };
-
-            const loader = tabDataLoaders[tabName];
-            if (loader) {
-                loader();
-            }
-        }
-
-        // === API请求工具函数 ===
-
-        // API request helper
-        async function apiRequest(url, method = 'GET', body = null, showGlobalLoading = true, loadingMessage = '正在处理请求...') {
-            const options = {
-                method,
-                headers: {
-                    'Content-Type': 'application/json',
-                    'x-admin-token': adminToken
-                }
-            };
-
-            if (body) {
-                options.body = JSON.stringify(body);
-            }
-
-            // 显示全局 loading
-            if (showGlobalLoading) {
-                showLoading(loadingMessage);
-            }
-
-            try {
-                const response = await fetch(url, options);
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(`HTTP ${response.status}: ${errorText}`);
-                }
-
-                const result = await response.json();
-
-                // 处理 CommonResponse 格式
-                if (result.success === false) {
-                    throw new Error(result.message || '请求失败');
-                }
-
-                // 返回实际数据，如果有 data 字段则返回 data，否则返回整个结果
-                return result.data !== undefined ? result.data : result;
-            } catch (error) {
-                console.error('API Error:', error);
-                throw error;
-            } finally {
-                // 无论成功还是失败都隐藏 loading
-                if (showGlobalLoading) {
-                    hideLoading();
-                }
-            }
-        }
-
-        // Database functions
-        async function initializeDatabase() {
-            try {
-                await apiRequest('/api/admin/db_initialize', 'POST', null, true, '正在初始化数据库...');
-                showAlert('数据库初始化成功！', 'success');
-            } catch (error) {
-                showAlert(`数据库初始化失败: ${error.message}`, 'error');
-            }
-        }
-
-        // === 表单编辑模式管理 ===
-
-        // 编辑模式管理类
-        class EditModeManager {
-            constructor(formModeId, jsonModeId, toggleBtnId, formModeText, jsonModeText) {
-                this.formModeElement = DOMUtils.getElement(formModeId);
-                this.jsonModeElement = DOMUtils.getElement(jsonModeId);
-                this.toggleBtn = DOMUtils.getElement(toggleBtnId);
-                this.formModeText = formModeText;
-                this.jsonModeText = jsonModeText;
-                this.currentMode = 'form';
-            }
-
-            // 切换编辑模式
-            toggle(formToJsonConverter, jsonToFormConverter) {
-                if (this.currentMode === 'form') {
-                    this._switchToJsonMode(formToJsonConverter);
-                } else {
-                    this._switchToFormMode(jsonToFormConverter);
-                }
-            }
-
-            _switchToJsonMode(converter) {
-                if (converter) {
-                    const data = converter();
-                    if (data && this.jsonModeElement) {
-                        const textarea = this.jsonModeElement.querySelector('textarea');
-                        if (textarea) {
-                            textarea.value = JSON.stringify(data, null, 2);
-                        }
-                    }
-                }
-
-                DOMUtils.hide(this.formModeElement);
-                DOMUtils.show(this.jsonModeElement);
-                if (this.toggleBtn) this.toggleBtn.textContent = this.formModeText;
-                this.currentMode = 'json';
-            }
-
-            _switchToFormMode(converter) {
-                if (converter) {
-                    try {
-                        const textarea = this.jsonModeElement?.querySelector('textarea');
-                        const jsonValue = textarea?.value;
-                        if (jsonValue) {
-                            const parsed = JSON.parse(jsonValue);
-                            converter(parsed);
-                        }
-                    } catch (error) {
-                        console.warn('JSON格式错误，无法转换到表单模式:', error);
-                    }
-                }
-
-                DOMUtils.show(this.formModeElement);
-                DOMUtils.hide(this.jsonModeElement);
-                if (this.toggleBtn) this.toggleBtn.textContent = this.jsonModeText;
-                this.currentMode = 'form';
-            }
-
-            // 重置到表单模式
-            resetToFormMode() {
-                this.currentMode = 'form';
-                DOMUtils.show(this.formModeElement);
-                DOMUtils.hide(this.jsonModeElement);
-                if (this.toggleBtn) this.toggleBtn.textContent = this.jsonModeText;
-            }
-
-            // 获取当前模式
-            getCurrentMode() {
-                return this.currentMode;
-            }
-        }
-
-        // === CHANNEL FUNCTIONS ===
-
-        // 全局变量跟踪编辑模式
-        let channelEditMode = 'form';
-        let tokenEditMode = 'form';
-        let pricingEditMode = 'table';
-
-        // 创建频道编辑模式管理器
-        const channelModeManager = new EditModeManager(
-            'channelFormMode',
-            'channelJsonMode',
-            'channelModeToggle',
-            '📋 切换到表单模式',
-            '📝 切换到JSON模式'
-        );
-
-        // 切换频道编辑模式
-        function toggleChannelEditMode() {
-            channelModeManager.toggle(
-                collectChannelFormData,
-                (parsed) => {
-                    const key = DOMUtils.getValue('channelKey');
-                    fillChannelForm(key, parsed);
-                }
-            );
-            channelEditMode = channelModeManager.getCurrentMode();
-        }
-
-        // 收集频道表单数据
-        function collectChannelFormData() {
-            const requiredFields = [
-                { id: 'channelName', name: '频道名称' },
-                { id: 'channelEndpoint', name: 'API端点' },
-                { id: 'channelApiKey', name: 'API密钥' }
-            ];
-
-            // 检查必填字段
-            for (const field of requiredFields) {
-                if (!DOMUtils.getValue(field.id)) {
-                    return null;
-                }
-            }
-
-            const config = {
-                name: DOMUtils.getValue('channelName'),
-                type: DOMUtils.getValue('channelType'),
-                endpoint: DOMUtils.getValue('channelEndpoint'),
-                api_key: DOMUtils.getValue('channelApiKey')
-            };
-
-            // 可选字段
-            const apiVersion = DOMUtils.getValue('channelApiVersion');
-            if (apiVersion) {
-                config.api_version = apiVersion;
-            }
-
-            // 处理JSON字段
-            const deploymentMapperText = DOMUtils.getValue('deploymentMapper');
-            if (deploymentMapperText) {
-                const parsed = FormUtils.validateJSON(deploymentMapperText, '部署映射JSON格式错误');
-                if (parsed) config.deployment_mapper = parsed;
-            }
-
-            const additionalConfigText = DOMUtils.getValue('additionalConfig');
-            if (additionalConfigText) {
-                const parsed = FormUtils.validateJSON(additionalConfigText, '其他配置JSON格式错误');
-                if (parsed) Object.assign(config, parsed);
-            }
-
-            return config;
-        }
-
-        // 填充频道表单
-        function fillChannelForm(key, config) {
-            const fieldMappings = [
-                { id: 'channelKey', value: key },
-                { id: 'channelName', value: config.name },
-                { id: 'channelType', value: config.type },
-                { id: 'channelEndpoint', value: config.endpoint },
-                { id: 'channelApiKey', value: config.api_key },
-                { id: 'channelApiVersion', value: config.api_version }
-            ];
-
-            fieldMappings.forEach(field => DOMUtils.setValue(field.id, field.value));
-
-            // 处理特殊字段
-            if (config.deployment_mapper) {
-                DOMUtils.setValue('deploymentMapper', JSON.stringify(config.deployment_mapper, null, 2));
-            } else {
-                DOMUtils.clearInput('deploymentMapper');
-            }
-
-            // 处理其他配置
-            const additionalConfig = { ...config };
-            ['name', 'type', 'endpoint', 'api_key', 'api_version', 'deployment_mapper'].forEach(key => {
-                delete additionalConfig[key];
-            });
-
-            if (Object.keys(additionalConfig).length > 0) {
-                DOMUtils.setValue('additionalConfig', JSON.stringify(additionalConfig, null, 2));
-            } else {
-                DOMUtils.clearInput('additionalConfig');
-            }
-        }
-
-        // 切换API版本字段的显示状态
-        function toggleApiVersionField() {
-            const channelType = DOMUtils.getValue('channelType');
-            const apiVersionGroup = DOMUtils.getElement('apiVersionGroup');
-
-            if (channelType === 'azure-openai') {
-                DOMUtils.show(apiVersionGroup);
-            } else {
-                DOMUtils.hide(apiVersionGroup);
-                DOMUtils.clearInput('channelApiVersion');
-            }
-        }
-
-        // 显示频道列表
-        function showChannelList() {
-            DOMUtils.show('channelListView');
-            DOMUtils.hide('channelFormView');
-            currentEditingChannel = null;
-        }
-
-        // 显示频道表单
-        function showChannelForm(isEdit = false) {
-            DOMUtils.hide('channelListView');
-            DOMUtils.show('channelFormView');
-            DOMUtils.setValue('channelFormTitle', isEdit ? '编辑频道' : '添加频道');
-
-            if (!isEdit) {
-                clearChannelForm();
-            }
-        }
-
-        // 清空频道表单
-        function clearChannelForm() {
-            // 清空所有输入字段
-            const fieldIds = [
-                'channelKey', 'channelName', 'channelEndpoint',
-                'channelApiKey', 'channelApiVersion', 'deploymentMapper',
-                'additionalConfig', 'channelValueJson'
-            ];
-
-            fieldIds.forEach(id => DOMUtils.clearInput(id));
-
-            // 重置表单状态
-            FormUtils.setReadonly('channelKey', false);
-            DOMUtils.setValue('channelType', 'openai');
-            DOMUtils.getElement('channelKey').placeholder = '例如: openai-1';
-
-            // 重置编辑模式
-            channelModeManager.resetToFormMode();
-            channelEditMode = 'form';
-            currentEditingChannel = null;
-
-            // 确保API版本字段根据类型正确显示
-            toggleApiVersionField();
-        }
-
-        // 编辑频道
-        function editChannelFromList(key, originalValue) {
-            currentEditingChannel = key;
-
-            const parsed = FormUtils.validateJSON(originalValue, '频道配置格式错误');
-            if (!parsed) return;
-
-            // 设置key字段为只读
-            FormUtils.saveOriginalPlaceholder('channelKey');
-            FormUtils.setReadonly('channelKey', true);
-            DOMUtils.setValue('channelKey', key);
-
-            if (channelEditMode === 'form') {
-                fillChannelForm(key, parsed);
-            } else {
-                DOMUtils.setValue('channelValueJson', JSON.stringify(parsed, null, 2));
-            }
-
-            toggleApiVersionField();
-            showChannelForm(true);
-        }
-
-        // 保存频道
-        async function saveChannel() {
-            const key = DOMUtils.getValue('channelKey');
-            if (!key) {
-                showAlert('请填写频道标识', 'error');
-                return;
-            }
-
-            let config;
-            if (channelEditMode === 'form') {
-                config = collectChannelFormData();
-                if (!config) {
-                    showAlert('请填写所有必填字段（频道名称、端点、API密钥）', 'error');
-                    return;
-                }
-            } else {
-                const jsonValue = DOMUtils.getValue('channelValueJson');
-                if (!jsonValue) {
-                    showAlert('请填写配置JSON', 'error');
-                    return;
-                }
-                config = FormUtils.validateJSON(jsonValue, 'JSON格式错误，请检查配置格式');
-                if (!config) return;
-            }
-
-            try {
-                await apiRequest(`/api/admin/channel/${encodeURIComponent(key)}`, 'POST', config, true, '正在保存频道...');
-                showAlert('频道保存成功！', 'success');
-                clearChannelForm();
-                showChannelList();
-                loadChannels();
-            } catch (error) {
-                showAlert(`保存频道失败: ${error.message}`, 'error');
-            }
-        }
-
-        // Channel functions
-        async function loadChannels() {
-            try {
-                const channels = await apiRequest('/api/admin/channel', 'GET', null, true);
-                displayChannels(channels);
-            } catch (error) {
-                DOMUtils.getElement('channelsList').innerHTML = `<div class="alert alert-error">加载频道失败: ${error.message}</div>`;
-            }
-        }
-
-        async function deleteChannel(key) {
-            if (!confirm('确定要删除这个频道吗？')) return;
-
-            try {
-                await apiRequest(`/api/admin/channel/${encodeURIComponent(key)}`, 'DELETE', null, true, '正在删除频道...');
-                showAlert('频道删除成功！', 'success');
-                loadChannels();
-            } catch (error) {
-                showAlert(`删除频道失败: ${error.message}`, 'error');
-            }
-        }
-
-        // 显示频道列表的通用函数
-        function displayChannels(channels) {
-            const container = DOMUtils.getElement('channelsList');
-            if (!container) return;
-
-            // 处理空数据的情况
-            if (!channels || !Array.isArray(channels) || channels.length === 0) {
-                container.innerHTML = '<div class="alert alert-error">暂无频道数据</div>';
-                return;
-            }
-
-            container.innerHTML = channels.map(item => {
-                let parsedValue = {};
-                try {
-                    parsedValue = JSON.parse(item.value);
-                } catch {
-                    parsedValue = { name: 'Invalid JSON', type: 'azure-openai', endpoint: '' };
-                }
-
-                const name = parsedValue.name || 'No name';
-                const type = parsedValue.type || 'Unknown';
-                const endpoint = (parsedValue.endpoint || '');
-                const endpointDisplay = endpoint.length > 50 ? endpoint.substring(0, 50) + '...' : endpoint;
-
-                return `
-                    <div class="item">
-                        <div class="item-info">
-                            <div class="item-key">${name}</div>
-                            <div class="item-details">
-                                ${item.key || 'Unknown'} | 类型: ${type} | 端点: ${endpointDisplay}
-                            </div>
-                        </div>
-                        <div class="actions">
-                            <button class="btn btn-secondary" onclick="editChannelFromList('${item.key}', '${item.value.replace(/'/g, '\\\'').replace(/"/g, '&quot;')}')">✏️ 编辑</button>
-                            <button class="btn btn-danger" onclick="deleteChannel('${item.key}')">🗑️ 删除</button>
-                        </div>
+    <!-- Add Channel Modal -->
+    <div class="modal-overlay" id="addChannelModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">添加频道</h2>
+            </div>
+            <div class="modal-body">
+                <form id="addChannelForm">
+                    <div class="form-group">
+                        <label class="label">频道 Key</label>
+                        <input type="text" class="input" id="channelKey" placeholder="channel-1" required>
                     </div>
-                `;
-            }).join('');
-        }
-
-        // === TOKEN FUNCTIONS ===
-
-        // 创建令牌编辑模式管理器
-        const tokenModeManager = new EditModeManager(
-            'tokenFormMode',
-            'tokenJsonMode',
-            'tokenModeToggle',
-            '📋 切换到表单模式',
-            '📝 切换到JSON模式'
-        );
-
-        // 切换令牌编辑模式
-        function toggleTokenEditMode() {
-            tokenModeManager.toggle(
-                () => {
-                    const formData = collectTokenFormData();
-                    delete formData.key; // 从配置中移除key，因为key现在是共用的
-                    return formData;
-                },
-                (parsed) => {
-                    const key = DOMUtils.getValue('tokenKey');
-                    fillTokenForm(key, parsed);
-                }
-            );
-            tokenEditMode = tokenModeManager.getCurrentMode();
-        }
-
-        // 收集令牌表单数据
-        function collectTokenFormData() {
-            const channelKeysInput = DOMUtils.getValue('channelKeysInput');
-            const channelKeys = channelKeysInput
-                ? channelKeysInput.split(',').map(key => key.trim()).filter(key => key.length > 0)
-                : [];
-
-            return {
-                key: DOMUtils.getValue('tokenKey'),
-                name: DOMUtils.getValue('tokenName'),
-                channel_keys: channelKeys,
-                total_quota: parseFloat(DOMUtils.getValue('totalQuotaInput')) || 0
-            };
-        }
-
-        // 填充令牌表单
-        function fillTokenForm(key, config) {
-            DOMUtils.setValue('tokenName', config.name);
-            DOMUtils.setValue('tokenKey', key);
-
-            const channelKeysStr = config.channel_keys && Array.isArray(config.channel_keys)
-                ? config.channel_keys.join(', ')
-                : '';
-            DOMUtils.setValue('channelKeysInput', channelKeysStr);
-            DOMUtils.setValue('totalQuotaInput', config.total_quota);
-        }
-
-        // Token按钮状态管理类
-        class TokenButtonManager {
-            static setEditMode(isEdit) {
-                const tokenKeyInput = DOMUtils.getElement('tokenKey');
-                const generateBtn = DOMUtils.getElement('generateTokenBtn');
-                const copyBtn = DOMUtils.getElement('copyTokenBtn');
-
-                if (isEdit) {
-                    // 编辑模式：只显示复制按钮，token key 不可编辑
-                    FormUtils.setReadonly('tokenKey', true);
-                    DOMUtils.hide(generateBtn);
-                    DOMUtils.show(copyBtn);
-                } else {
-                    // 创建模式：显示生成按钮，token key 可编辑
-                    FormUtils.setReadonly('tokenKey', false);
-                    DOMUtils.show(generateBtn);
-                    DOMUtils.hide(copyBtn);
-                    if (tokenKeyInput) {
-                        tokenKeyInput.placeholder = '输入令牌标识或点击生成';
-                    }
-                }
-            }
-        }
-
-        // 显示令牌列表
-        function showTokenList() {
-            DOMUtils.show('tokenListView');
-            DOMUtils.hide('tokenFormView');
-            currentEditingToken = null;
-        }
-
-        // 显示令牌表单
-        function showTokenForm(isEdit = false) {
-            DOMUtils.hide('tokenListView');
-            DOMUtils.show('tokenFormView');
-
-            const titleElement = DOMUtils.getElement('tokenFormTitle');
-            if (titleElement) titleElement.textContent = isEdit ? '编辑令牌' : '添加令牌';
-
-            TokenButtonManager.setEditMode(isEdit);
-
-            if (!isEdit) {
-                clearTokenForm();
-                generateTokenKey(); // 自动生成token标识
-            }
-        }
-
-        // 清空令牌表单
-        function clearTokenForm() {
-            // 清空所有字段
-            const fieldIds = ['tokenName', 'channelKeysInput', 'totalQuotaInput', 'tokenValueJson'];
-            fieldIds.forEach(id => DOMUtils.clearInput(id));
-
-            // 重置token key输入框状态
-            FormUtils.saveOriginalPlaceholder('tokenKey');
-            FormUtils.setReadonly('tokenKey', false);
-            DOMUtils.clearInput('tokenKey');
-
-            const tokenKeyInput = DOMUtils.getElement('tokenKey');
-            if (tokenKeyInput) {
-                tokenKeyInput.placeholder = '输入令牌标识或点击生成';
-            }
-
-            // 重置编辑模式
-            tokenModeManager.resetToFormMode();
-            tokenEditMode = 'form';
-            currentEditingToken = null;
-        }
-
-        // 生成token key
-        function generateTokenKey() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-            let result = 'sk-';
-            for (let i = 0; i < 48; i++) {
-                result += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            DOMUtils.setValue('tokenKey', result);
-        }
-
-        // 复制token key
-        function copyTokenKey() {
-            const tokenKey = DOMUtils.getValue('tokenKey');
-            if (!tokenKey) {
-                showAlert('请先生成令牌标识', 'error');
-                return;
-            }
-            copyToClipboard(tokenKey);
-        }
-
-        // 设置配额值
-        function setQuotaValue(value) {
-            DOMUtils.setValue('totalQuotaInput', value);
-        }
-
-        // 从列表编辑令牌
-        function editTokenFromList(key, originalValue) {
-            currentEditingToken = key;
-
-            const parsed = FormUtils.validateJSON(originalValue, '令牌配置格式错误');
-            if (!parsed) return;
-
-            // 设置key字段状态
-            FormUtils.saveOriginalPlaceholder('tokenKey');
-            FormUtils.setReadonly('tokenKey', true);
-            DOMUtils.setValue('tokenKey', key);
-
-            // 根据模式填充数据
-            if (tokenEditMode === 'form') {
-                fillTokenForm(key, parsed);
-            } else {
-                DOMUtils.setValue('tokenValueJson', JSON.stringify(parsed, null, 2));
-            }
-
-            TokenButtonManager.setEditMode(true);
-            showTokenForm(true);
-        }
-
-        // 保存令牌
-        async function saveToken() {
-            const key = DOMUtils.getValue('tokenKey');
-            if (!key) {
-                showAlert('请填写令牌标识', 'error');
-                return;
-            }
-
-            let config;
-            if (tokenEditMode === 'form') {
-                const formData = collectTokenFormData();
-                config = {
-                    name: formData.name,
-                    channel_keys: formData.channel_keys,
-                    total_quota: formData.total_quota
-                };
-
-                // 验证必填字段
-                if (!FormUtils.validateRequired([
-                    { id: 'tokenName', name: '令牌名称', message: '请填写令牌名称' }
-                ])) {
-                    return;
-                }
-
-                if (!formData.total_quota || isNaN(formData.total_quota) || formData.total_quota < 0) {
-                    showAlert('请输入有效的总配额数值', 'error');
-                    return;
-                }
-            } else {
-                const jsonValue = DOMUtils.getValue('tokenValueJson');
-                if (!jsonValue) {
-                    showAlert('请填写配置JSON', 'error');
-                    return;
-                }
-                config = FormUtils.validateJSON(jsonValue, 'JSON格式错误，请检查配置格式');
-                if (!config) return;
-            }
-
-            try {
-                await apiRequest(`/api/admin/token/${encodeURIComponent(key)}`, 'POST', config, true, '正在保存令牌...');
-                showAlert('令牌保存成功！', 'success');
-                clearTokenForm();
-                showTokenList();
-                loadTokens();
-            } catch (error) {
-                showAlert(`保存令牌失败: ${error.message}`, 'error');
-            }
-        }
-
-        // Token functions
-        async function loadTokens() {
-            try {
-                const tokens = await apiRequest('/api/admin/token', 'GET', null, true);
-                displayTokens(tokens);
-            } catch (error) {
-                DOMUtils.getElement('tokensList').innerHTML = `<div class="alert alert-error">加载令牌失败: ${error.message}</div>`;
-            }
-        }
-
-        async function deleteToken(key) {
-            if (!confirm('确定要删除这个令牌吗？')) return;
-
-            try {
-                await apiRequest(`/api/admin/token/${encodeURIComponent(key)}`, 'DELETE', null, true, '正在删除令牌...');
-                showAlert('令牌删除成功！', 'success');
-                loadTokens();
-            } catch (error) {
-                showAlert(`删除令牌失败: ${error.message}`, 'error');
-            }
-        }
-
-        // 显示令牌列表的通用函数
-        function displayTokens(tokens) {
-            const container = DOMUtils.getElement('tokensList');
-            if (!container) return;
-
-            // 处理空数据的情况
-            if (!tokens || !Array.isArray(tokens) || tokens.length === 0) {
-                container.innerHTML = '<div class="alert alert-error">暂无令牌数据</div>';
-                return;
-            }
-
-            container.innerHTML = tokens.map(item => {
-                let parsedValue = {};
-                try {
-                    parsedValue = JSON.parse(item.value);
-                } catch {
-                    parsedValue = { name: 'Invalid JSON', channel_keys: ['Invalid JSON'], total_quota: 0 };
-                }
-
-                // 处理 channel_keys 显示
-                const channelsDisplay = parsedValue.channel_keys && parsedValue.channel_keys.length > 0
-                    ? parsedValue.channel_keys.join(', ')
-                    : '所有频道';
-
-                // 将配额转换为美元显示
-                const totalQuotaValue = parsedValue.total_quota || 0;
-                const quotaInDollars = (totalQuotaValue / 1000000).toFixed(2);
-                const usageValue = item.usage || 0;
-                const usageInDollars = (usageValue / 1000000).toFixed(2);
-
-                const tokenName = parsedValue.name || '未命名';
-
-                return `
-                    <div class="item">
-                        <div class="item-info">
-                            <div class="item-key">${tokenName}</div>
-                            <div class="item-details">
-                                频道: ${channelsDisplay} | 配额: $${quotaInDollars} | 已用: $${usageInDollars}
-                            </div>
-                        </div>
-                        <div class="actions">
-                            <button class="btn btn-secondary" onclick="copyToClipboard('${item.key}')" title="复制token">📋 复制</button>
-                            <button class="btn btn-secondary" onclick="editTokenFromList('${item.key}', '${item.value.replace(/'/g, '\\\'').replace(/"/g, '&quot;')}')">✏️ 编辑</button>
-                            <button class="btn btn-danger" onclick="deleteToken('${item.key}')">🗑️ 删除</button>
-                        </div>
+                    <div class="form-group">
+                        <label class="label">频道名称</label>
+                        <input type="text" class="input" id="channelName" placeholder="My Channel" required>
                     </div>
-                `;
-            }).join('');
-        }
-
-        // === PRICING FUNCTIONS ===
-
-        // 创建定价编辑模式管理器
-        const pricingModeManager = new EditModeManager(
-            'pricingTableMode',
-            'pricingJsonMode',
-            'pricingModeToggle',
-            '📊 切换到表格模式',
-            '📝 切换到JSON模式'
-        );
-
-        // 切换定价编辑模式
-        function togglePricingEditMode() {
-            const addBtn = DOMUtils.getElement('addPricingModelBtn');
-
-            pricingModeManager.toggle(
-                collectPricingTableData,
-                (parsed) => displayPricingTable(parsed)
-            );
-
-            pricingEditMode = pricingModeManager.getCurrentMode();
-
-            // 控制添加模型按钮的显示
-            if (addBtn) {
-                if (pricingEditMode === 'table') {
-                    DOMUtils.show(addBtn);
-                } else {
-                    DOMUtils.hide(addBtn);
-                }
-            }
-        }
-
-        // 收集定价表格数据
-        function collectPricingTableData() {
-            const tbody = DOMUtils.getElement('pricingTableBody');
-            const config = {};
-
-            if (!tbody) return config;
-
-            Array.from(tbody.children).forEach((row) => {
-                const inputs = row.querySelectorAll('input');
-                if (inputs.length < 3) return;
-
-                const modelName = inputs[0].value.trim();
-                const inputPrice = parseFloat(inputs[1].value) || 0;
-                const outputPrice = parseFloat(inputs[2].value) || 0;
-
-                if (modelName) {
-                    config[modelName] = {
-                        input: inputPrice,
-                        output: outputPrice
-                    };
-                }
-            });
-
-            return config;
-        }
-
-        // 添加新的定价模型行
-        function addPricingModel() {
-            const tbody = DOMUtils.getElement('pricingTableBody');
-            if (!tbody) return;
-
-            const rowIndex = tbody.children.length;
-            const row = document.createElement('tr');
-            row.style.borderBottom = '1px solid #e9ecef';
-            row.innerHTML = `
-                <td style="padding: 12px; border: 1px solid #e9ecef;">
-                    <input type="text" class="form-control" placeholder="例如: gpt-4"
-                           onchange="validatePricingRow(${rowIndex})" style="border: none; padding: 8px; background: transparent;">
-                </td>
-                <td style="padding: 12px; border: 1px solid #e9ecef;">
-                    <input type="number" class="form-control" placeholder="0.03" step="0.001" min="0"
-                           onchange="validatePricingRow(${rowIndex})" style="border: none; padding: 8px; background: transparent;">
-                </td>
-                <td style="padding: 12px; border: 1px solid #e9ecef;">
-                    <input type="number" class="form-control" placeholder="0.06" step="0.001" min="0"
-                           onchange="validatePricingRow(${rowIndex})" style="border: none; padding: 8px; background: transparent;">
-                </td>
-                <td style="padding: 12px; border: 1px solid #e9ecef; text-align: center;">
-                    <button class="btn btn-danger" onclick="removePricingRow(this)" style="font-size: 12px; padding: 6px 12px; white-space: nowrap;">🗑️ 删除</button>
-                </td>
-            `;
-            tbody.appendChild(row);
-        }
-
-        // 删除定价模型行
-        function removePricingRow(button) {
-            const row = button.closest('tr');
-            if (row) row.remove();
-        }
-
-        // 验证定价行数据
-        function validatePricingRow(rowIndex) {
-            // 这里可以添加验证逻辑，比如检查模型名称是否重复等
-        }
-
-        // Pricing functions
-        async function loadPricing() {
-            try {
-                const pricing = await apiRequest('/api/admin/pricing', 'GET', null, true);
-                const addBtn = DOMUtils.getElement('addPricingModelBtn');
-
-                if (pricingEditMode === 'table') {
-                    displayPricingTable(pricing);
-                    if (addBtn) DOMUtils.show(addBtn);
-                } else {
-                    DOMUtils.setValue('pricingConfigJson', JSON.stringify(pricing, null, 2));
-                    if (addBtn) DOMUtils.hide(addBtn);
-                }
-            } catch (error) {
-                // 失败时显示错误信息并重新创建表格结构
-                if (pricingEditMode === 'table') {
-                    const pricingContent = DOMUtils.getElement('pricingContent');
-                    if (pricingContent) {
-                        pricingContent.innerHTML = `
-                            <div class="alert alert-error">加载定价配置失败: ${error.message}</div>
-                            <div id="pricingTableMode" class="pricing-table">
-                                <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-                                    <thead>
-                                        <tr style="background-color: #f8f9fa; border-bottom: 2px solid #e9ecef;">
-                                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef;">模型名称</th>
-                                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef;">输入倍率</th>
-                                            <th style="padding: 12px; text-align: left; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef;">输出倍率</th>
-                                            <th style="padding: 12px; text-align: center; font-weight: 600; color: #2d3748; border: 1px solid #e9ecef; width: 100px;">操作</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="pricingTableBody">
-                                        <!-- 动态生成的定价行 -->
-                                    </tbody>
-                                </table>
-                            </div>
-                            <div id="pricingJsonMode" style="display: none;">
-                                <div class="form-group">
-                                    <label for="pricingConfigJson">定价配置 (JSON)</label>
-                                    <textarea id="pricingConfigJson" class="form-control" rows="15"
-                                        placeholder='{"gpt-3.5-turbo": {"input": 0.001, "output": 0.002}, "gpt-4": {"input": 0.03, "output": 0.06}}'></textarea>
-                                    <small style="color: #666; font-size: 12px; margin-top: 8px; display: block;">
-                                        配置格式：模型名称 -> {input: 输入倍率, output: 输出倍率}。倍率基于1百万token=$1.00计算
-                                    </small>
-                                </div>
-                            </div>
-                        `;
-                    }
-                } else {
-                    showAlert(`加载定价配置失败: ${error.message}`, 'error');
-                }
-            }
-        }
-
-        // 显示定价配置表格
-        function displayPricingTable(pricing) {
-            const tbody = DOMUtils.getElement('pricingTableBody');
-            if (!tbody) return;
-
-            tbody.innerHTML = '';
-
-            // 如果没有定价数据，添加一行空白行
-            if (!pricing || Object.keys(pricing).length === 0) {
-                addPricingModel();
-                return;
-            }
-
-            // 为每个模型创建一行
-            Object.entries(pricing).forEach(([modelName, modelPricing]) => {
-                const row = document.createElement('tr');
-                row.style.borderBottom = '1px solid #e9ecef';
-
-                const inputPrice = modelPricing.input || 0;
-                const outputPrice = modelPricing.output || 0;
-
-                row.innerHTML = `
-                    <td style="padding: 12px; border: 1px solid #e9ecef;">
-                        <input type="text" class="form-control" value="${modelName}"
-                               style="border: none; padding: 8px; background: transparent;">
-                    </td>
-                    <td style="padding: 12px; border: 1px solid #e9ecef;">
-                        <input type="number" class="form-control" value="${inputPrice}" step="0.001" min="0"
-                               style="border: none; padding: 8px; background: transparent;">
-                    </td>
-                    <td style="padding: 12px; border: 1px solid #e9ecef;">
-                        <input type="number" class="form-control" value="${outputPrice}" step="0.001" min="0"
-                               style="border: none; padding: 8px; background: transparent;">
-                    </td>
-                    <td style="padding: 12px; border: 1px solid #e9ecef; text-align: center;">
-                        <button class="btn btn-danger" onclick="removePricingRow(this)" style="font-size: 12px; padding: 6px 12px; white-space: nowrap;">🗑️ 删除</button>
-                    </td>
-                `;
-                tbody.appendChild(row);
-            });
-        }
-
-        // 定价验证类
-        class PricingValidator {
-            static validateTableData() {
-                const tbody = DOMUtils.getElement('pricingTableBody');
-                if (!tbody) {
-                    return { isValid: false, error: '定价表格未找到，请刷新页面重试' };
-                }
-
-                const config = {};
-                let errorMessage = '';
-
-                // 遍历所有行收集数据
-                const rows = Array.from(tbody.children);
-                for (let index = 0; index < rows.length; index++) {
-                    const row = rows[index];
-                    const inputs = row.querySelectorAll('input');
-                    if (inputs.length < 3) continue;
-
-                    const modelName = inputs[0].value.trim();
-                    const inputPrice = parseFloat(inputs[1].value);
-                    const outputPrice = parseFloat(inputs[2].value);
-
-                    // 验证数据
-                    if (!modelName) {
-                        errorMessage = `第 ${index + 1} 行：模型名称不能为空`;
-                        break;
-                    }
-
-                    if (isNaN(inputPrice) || inputPrice < 0) {
-                        errorMessage = `第 ${index + 1} 行：输入倍率必须是有效的非负数`;
-                        break;
-                    }
-
-                    if (isNaN(outputPrice) || outputPrice < 0) {
-                        errorMessage = `第 ${index + 1} 行：输出倍率必须是有效的非负数`;
-                        break;
-                    }
-
-                    // 检查模型名称是否重复
-                    if (config[modelName]) {
-                        errorMessage = `模型名称 "${modelName}" 重复`;
-                        break;
-                    }
-
-                    config[modelName] = {
-                        input: inputPrice,
-                        output: outputPrice
-                    };
-                }
-
-                if (errorMessage) {
-                    return { isValid: false, error: errorMessage };
-                }
-
-                if (Object.keys(config).length === 0) {
-                    return { isValid: false, error: '请至少添加一个模型的定价配置' };
-                }
-
-                return { isValid: true, data: config };
-            }
-        }
-
-        async function updatePricing() {
-            let config;
-
-            if (pricingEditMode === 'table') {
-                const validation = PricingValidator.validateTableData();
-                if (!validation.isValid) {
-                    showAlert(validation.error, 'error');
-                    return;
-                }
-                config = validation.data;
-            } else {
-                const configText = DOMUtils.getValue('pricingConfigJson');
-                if (!configText) {
-                    showAlert('请填写定价配置', 'error');
-                    return;
-                }
-                config = FormUtils.validateJSON(configText, '配置格式错误，请检查JSON格式');
-                if (!config) return;
-            }
-
-            try {
-                await apiRequest('/api/admin/pricing', 'POST', config, true, '正在更新定价配置...');
-                showAlert('定价配置更新成功！', 'success');
-                loadPricing();
-            } catch (error) {
-                showAlert(`更新定价配置失败: ${error.message}`, 'error');
-            }
-        }
-
-        // === API TEST FUNCTIONS ===
-
-        // API测试管理类
-        class ApiTestManager {
-            static async sendRequest() {
-                const token = DOMUtils.getValue('apiTestToken');
-                const requestText = DOMUtils.getValue('apiTestRequest');
-                const responseTextarea = DOMUtils.getElement('apiTestResponse');
-                const statusDiv = DOMUtils.getElement('apiTestStatus');
-
-                if (!FormUtils.validateRequired([
-                    { id: 'apiTestToken', name: 'Bearer Token', message: '请输入 Bearer Token' },
-                    { id: 'apiTestRequest', name: '请求 JSON', message: '请输入请求 JSON' }
-                ])) {
-                    return;
-                }
-
-                const requestJson = FormUtils.validateJSON(requestText, '请求 JSON 格式错误');
-                if (!requestJson) return;
-
-                // 显示加载状态
-                if (responseTextarea) responseTextarea.value = '正在发送请求...';
-                if (statusDiv) statusDiv.style.display = 'none';
-
-                try {
-                    const startTime = Date.now();
-
-                    const response = await fetch('/v1/chat/completions', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify(requestJson)
-                    });
-
-                    const endTime = Date.now();
-                    const duration = endTime - startTime;
-
-                    this._displayTestResult(response, duration, responseTextarea, statusDiv);
-                } catch (error) {
-                    this._displayTestError(error, responseTextarea, statusDiv);
-                }
-            }
-
-            static async _displayTestResult(response, duration, responseTextarea, statusDiv) {
-                if (statusDiv) statusDiv.style.display = 'block';
-
-                if (response.ok) {
-                    const responseData = await response.json();
-                    if (responseTextarea) {
-                        responseTextarea.value = JSON.stringify(responseData, null, 2);
-                    }
-
-                    if (statusDiv) {
-                        statusDiv.className = 'alert alert-success';
-                        statusDiv.innerHTML = `
-                            <strong>✅ 请求成功</strong><br>
-                            状态码: ${response.status}<br>
-                            响应时间: ${duration}ms
-                        `;
-                    }
-                } else {
-                    const errorText = await response.text();
-                    if (responseTextarea) responseTextarea.value = errorText;
-
-                    if (statusDiv) {
-                        statusDiv.className = 'alert alert-error';
-                        statusDiv.innerHTML = `
-                            <strong>❌ 请求失败</strong><br>
-                            状态码: ${response.status}<br>
-                            响应时间: ${duration}ms
-                        `;
-                    }
-                }
-            }
-
-            static _displayTestError(error, responseTextarea, statusDiv) {
-                if (responseTextarea) {
-                    responseTextarea.value = `请求失败: ${error.message}`;
-                }
-
-                if (statusDiv) {
-                    statusDiv.style.display = 'block';
-                    statusDiv.className = 'alert alert-error';
-                    statusDiv.innerHTML = `<strong>❌ 网络错误</strong><br>${error.message}`;
-                }
-            }
-
-            static clear() {
-                DOMUtils.clearInput('apiTestToken');
-                DOMUtils.setValue('apiTestRequest', `{
-  "model": "gpt-4",
-  "messages": [
-    {
-      "role": "user",
-      "content": "Hello, world!"
-    }
-  ]
-}`);
-                DOMUtils.clearInput('apiTestResponse');
-                const statusDiv = DOMUtils.getElement('apiTestStatus');
-                if (statusDiv) statusDiv.style.display = 'none';
-            }
-        }
-
-        // 发送 API 测试请求
-        async function sendApiTest() {
-            await ApiTestManager.sendRequest();
-        }
-
-        // 清空 API 测试数据
-        function clearApiTest() {
-            ApiTestManager.clear();
-        }
-
-        // === UTILITY FUNCTIONS ===
-
-        // 剪贴板管理类
-        class ClipboardManager {
-            static async copy(text) {
-                try {
-                    await navigator.clipboard.writeText(text);
-                    showAlert('已复制到剪贴板', 'success', 2000);
-                } catch (error) {
-                    // 降级方案
-                    this._fallbackCopy(text);
-                }
-            }
-
-            static _fallbackCopy(text) {
-                const textArea = document.createElement('textarea');
-                textArea.value = text;
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-                showAlert('已复制到剪贴板', 'success', 2000);
-            }
-        }
-
-        function copyToClipboard(text) {
-            ClipboardManager.copy(text);
-        }
-
-        // 消息提示管理类
-        class AlertManager {
-            static show(message, type, duration = 5000) {
-                // 移除现有提示
-                this._removeExistingAlerts();
-
-                const alertDiv = document.createElement('div');
-                alertDiv.className = `alert alert-${type} alert-top`;
-                alertDiv.textContent = message;
-
-                const container = document.querySelector('.container');
-                if (container) {
-                    container.insertBefore(alertDiv, container.firstChild);
-                }
-
-                // 自动移除
-                setTimeout(() => {
-                    alertDiv.remove();
-                }, duration);
-            }
-
-            static _removeExistingAlerts() {
-                const existingAlerts = document.querySelectorAll('.alert');
-                existingAlerts.forEach(alert => alert.remove());
-            }
-        }
-
-        function showAlert(message, type, duration = 5000) {
-            AlertManager.show(message, type, duration);
-        }
-
-        // Loading 管理对象
-        const LoadingManager = {
-            delayTimer: null,
-            minShowTimer: null,
-            loadingElement: null,
-            showStartTime: null,
-            showDelay: 500, // 延迟 500ms 显示，避免快速请求的闪烁
-            minShowDuration: 500, // 最小显示时长 500ms，避免一闪而过
-
-            show(message) {
-                // 如果已存在 loading，先清理
-                this.hide();
-
-                // 设置延迟显示
-                this.delayTimer = setTimeout(() => {
-                    this._showLoading(message);
-                }, this.showDelay);
-            },
-
-            _showLoading(message) {
-                const mainContent = document.getElementById('mainContent');
-                if (!mainContent) return;
-
-                // 记录显示开始时间
-                this.showStartTime = Date.now();
-
-                // 添加 loading 状态类
-                mainContent.classList.add('loading-active');
-
-                // 创建 loading 元素
-                const loadingDiv = document.createElement('div');
-                loadingDiv.id = 'loadingOverlay';
-                loadingDiv.innerHTML = `
-                    <div class="spinner"></div>
-                    <p>${message}</p>
-                `;
-
-                // 初始设置为透明，准备淡入动画
-                loadingDiv.style.opacity = '0';
-                mainContent.appendChild(loadingDiv);
-
-                this.loadingElement = loadingDiv;
-
-                // 触发淡入动画
-                requestAnimationFrame(() => {
-                    loadingDiv.style.opacity = '1';
-                });
-            },
-
-            hide() {
-                // 清除延迟显示定时器
-                if (this.delayTimer) {
-                    clearTimeout(this.delayTimer);
-                    this.delayTimer = null;
-                }
-
-                // 如果 loading 还没有显示，直接返回
-                if (!this.loadingElement) {
-                    return;
-                }
-
-                // 计算已显示时长
-                const showDuration = Date.now() - this.showStartTime;
-                const remainingMinShowTime = Math.max(0, this.minShowDuration - showDuration);
-
-                // 如果还没达到最小显示时长，延迟隐藏
-                if (remainingMinShowTime > 0) {
-                    this.minShowTimer = setTimeout(() => {
-                        this._hideLoading();
-                    }, remainingMinShowTime);
-                } else {
-                    this._hideLoading();
-                }
-            },
-
-            _hideLoading() {
-                // 清除最小显示定时器
-                if (this.minShowTimer) {
-                    clearTimeout(this.minShowTimer);
-                    this.minShowTimer = null;
-                }
-
-                if (this.loadingElement) {
-                    // 淡出动画
-                    this.loadingElement.style.opacity = '0';
-
-                    // 等待动画完成后移除元素
-                    setTimeout(() => {
-                        if (this.loadingElement) {
-                            this.loadingElement.remove();
-                            this.loadingElement = null;
-                        }
-
-                        // 移除 loading 状态类
-                        const mainContent = document.getElementById('mainContent');
-                        if (mainContent) {
-                            mainContent.classList.remove('loading-active');
-                        }
-                    }, 300); // 与 CSS transition 时间匹配
-                }
-
-                this.showStartTime = null;
-            }
-        };
-
-        // 保持原有的函数接口，以兼容现有代码
-        function showLoading(message) {
-            LoadingManager.show(message);
-        }
-
-        function hideLoading() {
-            LoadingManager.hide();
-        }
-
-        // === 页面初始化和事件处理 ===
-
-        // 页面初始化管理类
-        class PageInitializer {
-            static init() {
-                this._initAuth();
-                this._initEventListeners();
-                this._initKeyboardShortcuts();
-            }
-
-            static _initAuth() {
-                if (AuthManager.restoreToken()) {
-                    showMainContent();
-                } else {
-                    showHomePage();
-                }
-            }
-
-            static _initEventListeners() {
-                // 为登录输入框添加回车键监听
-                const tokenInput = DOMUtils.getElement('adminToken');
-                if (tokenInput) {
-                    tokenInput.addEventListener('keypress', (event) => {
-                        if (event.key === 'Enter') {
-                            authenticate();
-                        }
-                    });
-                }
-
-                // 点击模态框外部关闭
-                window.onclick = (event) => {
-                    const modal = DOMUtils.getElement('loginModal');
-                    if (event.target === modal) {
-                        closeLoginModal();
-                    }
-                };
-            }
-
-            static _initKeyboardShortcuts() {
-                // ESC键关闭模态框
-                document.addEventListener('keydown', (event) => {
-                    if (event.key === 'Escape') {
-                        const modal = DOMUtils.getElement('loginModal');
-                        if (modal && modal.style.display === 'block') {
-                            closeLoginModal();
-                        }
-                    }
-                });
-            }
-        }
-
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            PageInitializer.init();
-        });
-    </script>
+                    <div class="form-group">
+                        <label class="label">类型</label>
+                        <select class="input" id="channelType" required>
+                            <option value="openai">OpenAI</option>
+                            <option value="azure-openai">Azure OpenAI</option>
+                            <option value="claude">Claude</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">API 端点</label>
+                        <input type="url" class="input" id="channelEndpoint" placeholder="https://api.openai.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">API 密钥</label>
+                        <input type="password" class="input" id="channelApiKey" placeholder="sk-..." required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">模型映射 (JSON)</label>
+                        <textarea class="input" id="channelMapper" rows="4" placeholder='{"gpt-3.5-turbo": "gpt-3.5-turbo"}' required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="toggleModal('addChannelModal')">取消</button>
+                <button class="btn btn-primary" onclick="addChannel(event)">添加</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Token Modal -->
+    <div class="modal-overlay" id="addTokenModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">创建令牌</h2>
+            </div>
+            <div class="modal-body">
+                <form id="addTokenForm">
+                    <div class="form-group">
+                        <label class="label">令牌 Key</label>
+                        <input type="text" class="input" id="tokenKey" placeholder="sk-..." required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">令牌名称</label>
+                        <input type="text" class="input" id="tokenName" placeholder="My Token" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">总配额</label>
+                        <input type="number" class="input" id="tokenQuota" placeholder="100" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="label">允许的频道 (留空允许所有)</label>
+                        <input type="text" class="input" id="tokenChannels" placeholder="channel-1,channel-2">
+                        <p class="text-sm text-muted mt-1">多个频道用逗号分隔</p>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" onclick="toggleModal('addTokenModal')">取消</button>
+                <button class="btn btn-primary" onclick="addToken(event)">创建</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">加载中...</div>
+    </div>
+
+    <script type="module" src="/js/main.js"></script>
 </body>
-
 </html>
