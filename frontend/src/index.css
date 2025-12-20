@@ -1,0 +1,101 @@
+@import 'tailwindcss';
+
+@theme {
+  /* 现代简洁配色 - 粉色主题 */
+  --color-background: hsl(0 0% 100%);
+  --color-foreground: hsl(240 10% 4%);
+  --color-card: hsl(0 0% 100%);
+  --color-card-foreground: hsl(240 10% 4%);
+  --color-popover: hsl(0 0% 100%);
+  --color-popover-foreground: hsl(240 10% 4%);
+
+  /* 主色调 - 浅粉色 */
+  --color-primary: hsl(350 89% 70%);
+  --color-primary-foreground: hsl(0 0% 100%);
+
+  /* 次要色 */
+  --color-secondary: hsl(240 5% 96%);
+  --color-secondary-foreground: hsl(240 6% 10%);
+
+  /* 静音色 */
+  --color-muted: hsl(240 5% 96%);
+  --color-muted-foreground: hsl(240 4% 46%);
+
+  /* 强调色 - 淡粉 */
+  --color-accent: hsl(350 89% 95%);
+  --color-accent-foreground: hsl(350 70% 45%);
+
+  /* 危险色 */
+  --color-destructive: hsl(0 84% 60%);
+  --color-destructive-foreground: hsl(0 0% 100%);
+
+  /* 边框和输入框 */
+  --color-border: hsl(240 6% 90%);
+  --color-input: hsl(240 6% 90%);
+  --color-ring: hsl(350 89% 70%);
+
+  --radius: 0.5rem;
+}
+
+.dark {
+  --color-background: hsl(240 10% 4%);
+  --color-foreground: hsl(0 0% 95%);
+  --color-card: hsl(240 10% 4%);
+  --color-card-foreground: hsl(0 0% 95%);
+  --color-popover: hsl(240 10% 4%);
+  --color-popover-foreground: hsl(0 0% 95%);
+
+  /* 主色调 - 深色模式下的浅粉色 */
+  --color-primary: hsl(350 89% 75%);
+  --color-primary-foreground: hsl(240 10% 4%);
+
+  --color-secondary: hsl(240 4% 16%);
+  --color-secondary-foreground: hsl(0 0% 95%);
+
+  --color-muted: hsl(240 4% 16%);
+  --color-muted-foreground: hsl(240 5% 65%);
+
+  --color-accent: hsl(350 40% 18%);
+  --color-accent-foreground: hsl(350 89% 80%);
+
+  --color-destructive: hsl(0 63% 50%);
+  --color-destructive-foreground: hsl(0 0% 95%);
+
+  --color-border: hsl(240 4% 16%);
+  --color-input: hsl(240 4% 16%);
+  --color-ring: hsl(350 89% 75%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+}
+
+/* 自定义滚动条 */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(240 4% 46% / 0.3);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(240 4% 46% / 0.5);
+  }
+}
