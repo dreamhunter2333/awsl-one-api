@@ -9,9 +9,10 @@ routes = [
 ADMIN_TOKEN = "your-secure-admin-token-here"
 
 [assets]
-directory = "public"
+directory = "./public"
+not_found_handling = "single-page-application"
 binding = "ASSETS"
-run_worker_first = true
+run_worker_first = ["/api/*", "/v1/*"]
 
 [[d1_databases]]
 binding = "DB"

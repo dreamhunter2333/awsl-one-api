@@ -15,7 +15,7 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
-  isLoading: false,
+  isLoading: true,
   error: null,
   showAuthModal: false,
 
@@ -48,16 +48,17 @@ export const useAuthStore = create<AuthState>((set) => ({
   checkAuth: async () => {
     const token = localStorage.getItem('adminToken')
     if (!token) {
-      set({ isAuthenticated: false })
+      set({ isAuthenticated: false, isLoading: false })
       return
     }
 
+    set({ isLoading: true })
     try {
       await apiClient.checkAuth()
-      set({ isAuthenticated: true })
+      set({ isAuthenticated: true, isLoading: false })
     } catch (error) {
       localStorage.removeItem('adminToken')
-      set({ isAuthenticated: false })
+      set({ isAuthenticated: false, isLoading: false })
     }
   },
 
