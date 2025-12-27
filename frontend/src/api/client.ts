@@ -48,11 +48,16 @@ async function responseInterceptor(response: Response): Promise<any> {
   if (!response.ok) {
     let errorMessage: string
 
+    // 先读取为文本，避免 body stream already read 错误
+    const responseText = await response.text()
+
     try {
-      const errorData = await response.json()
+      // 尝试解析为 JSON
+      const errorData = JSON.parse(responseText)
       errorMessage = errorData.message || errorData.error || JSON.stringify(errorData)
     } catch {
-      errorMessage = await response.text() || `请求失败: ${response.status}`
+      // 不是 JSON，直接使用文本
+      errorMessage = responseText || `请求失败: ${response.status}`
     }
 
     const error = new ApiError(errorMessage, response.status)
