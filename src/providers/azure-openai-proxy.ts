@@ -11,9 +11,12 @@ const buildProxyRequest = (
     const url = new URL(request.url)
     const targetUrl = new URL(config.endpoint)
 
-    // 如果 endpoint 末尾不带 #，则设置标准的 Azure OpenAI pathname
+    // 如果 endpoint 末尾不带 #，则设置标准的 Azure OpenAI pathname（保留原有 path 前缀）
     if (!config.endpoint.endsWith('#')) {
-        targetUrl.pathname = `/openai/deployments/${deploymentName}/${url.pathname.replace('/v1/', '')}`
+        const basePath = targetUrl.pathname.endsWith('/')
+            ? targetUrl.pathname.slice(0, -1)
+            : targetUrl.pathname
+        targetUrl.pathname = `${basePath}/openai/deployments/${deploymentName}/${url.pathname.replace('/v1/', '')}`
     }
 
     if (config.api_version) {
@@ -103,14 +106,18 @@ export default {
     async fetch(
         c: Context<HonoCustomType>,
         config: ChannelConfig,
+        requestBody: any,
         saveUsage: (usage: Usage) => Promise<void>,
     ): Promise<Response> {
         // 准备请求数据
-        const reqJson = await c.req.json()
+        const reqJson = requestBody
         // 强制包含使用数据
         const { model: modelName, stream } = reqJson;
         if (stream) {
-            reqJson.stream_options = { "include_usage": true }
+            reqJson.stream_options = {
+                ...(reqJson.stream_options || {}),
+                include_usage: true,
+            }
         }
 
         // 获取部署名称

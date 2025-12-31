@@ -33,7 +33,7 @@ export const TokenUtils = {
 
         // Get pricing and calculate cost
         const pricing = await this.getPricing(c, model, targetChannelConfig);
-        const hasTokens = usage.prompt_tokens && usage.completion_tokens;
+        const hasTokens = usage.prompt_tokens != null && usage.completion_tokens != null;
 
         if (pricing && hasTokens) {
             const inputCost = usage.prompt_tokens! * pricing.input;

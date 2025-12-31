@@ -32,6 +32,10 @@ const requestTemplates: Record<string, any> = {
       },
     ],
   },
+  '/v1/responses': {
+    model: 'gpt-4o-mini',
+    input: 'Hello, Responses API!',
+  },
   '/v1/completions': {
     model: 'gpt-3.5-turbo-instruct',
     prompt: 'Once upon a time',
@@ -121,6 +125,7 @@ export function ApiTest() {
                 >
                   <option value="/v1/chat/completions">/v1/chat/completions</option>
                   <option value="/v1/messages">/v1/messages</option>
+                  <option value="/v1/responses">/v1/responses</option>
                   <option value="/v1/completions">/v1/completions</option>
                 </Select>
               </div>

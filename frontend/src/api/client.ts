@@ -54,7 +54,13 @@ async function responseInterceptor(response: Response): Promise<any> {
     try {
       // 尝试解析为 JSON
       const errorData = JSON.parse(responseText)
-      errorMessage = errorData.message || errorData.error || JSON.stringify(errorData)
+      if (typeof errorData?.message === 'string') {
+        errorMessage = errorData.message
+      } else if (typeof errorData?.error === 'string') {
+        errorMessage = errorData.error
+      } else {
+        errorMessage = JSON.stringify(errorData)
+      }
     } catch {
       // 不是 JSON，直接使用文本
       errorMessage = responseText || `请求失败: ${response.status}`

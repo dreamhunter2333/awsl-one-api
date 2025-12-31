@@ -94,14 +94,18 @@ export default {
     async fetch(
         c: Context<HonoCustomType>,
         config: ChannelConfig,
+        requestBody: any,
         saveUsage: (usage: Usage) => Promise<void>,
     ): Promise<Response> {
         // 准备请求数据
-        const reqJson = await c.req.json()
+        const reqJson = requestBody
         // 强制包含使用数据
         const { model: modelName, stream } = reqJson;
         if (stream) {
-            reqJson.stream_options = { "include_usage": true }
+            reqJson.stream_options = {
+                ...(reqJson.stream_options || {}),
+                include_usage: true,
+            }
         }
 
         // 检查模型是否受支持

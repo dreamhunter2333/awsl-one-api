@@ -5,7 +5,7 @@
 ## ✨ 特性
 
 - 🚀 **基于 Cloudflare Workers**：无服务器架构，全球边缘部署
-- 🔐 **多渠道支持**：支持 Azure OpenAI 和 OpenAI，后续会继续增加其他 AI 服务提供商
+- 🔐 **多渠道支持**：支持 OpenAI、Azure OpenAI、Claude、OpenAI Responses、Azure OpenAI Responses
 - 🎫 **Token 管理**：完整的 API Token 生成、管理和配额控制
 - 📊 **使用量统计**：实时统计 API 使用量和费用
 - 💰 **定价管理**：灵活的模型定价配置
@@ -52,6 +52,9 @@ awsl-one-api/
 │   ├── providers/                # AI 服务提供商
 │   │   ├── azure-openai-proxy.ts # Azure OpenAI 代理
 │   │   ├── openai-proxy.ts       # OpenAI 代理
+│   │   ├── claude-proxy.ts       # Claude 代理
+│   │   ├── openai-responses-proxy.ts # OpenAI Responses 代理
+│   │   ├── azure-openai-responses-proxy.ts # Azure Responses 代理
 │   │   └── index.ts              # 提供商路由
 │   ├── db/                       # 数据库相关
 │   ├── model/                    # 数据模型
@@ -143,10 +146,8 @@ pnpm run deploy
 
 1. 在 Web 界面切换到 **🔗 频道管理** 标签
 2. 点击 **➕ 添加频道** 按钮
-3. 选择频道类型（Azure OpenAI 或 OpenAI）
-4. 填写频道标识和配置信息：
-   - 对于 OpenAI：填写基本信息（名称、端点、API密钥）和模型映射配置
-   - 对于 Azure OpenAI：还需要配置 API 版本和模型部署映射
+3. 选择频道类型（OpenAI、Azure OpenAI、Claude、Responses）
+4. 填写频道标识和配置信息（名称、端点、API 密钥、模型映射）
 5. 点击 **💾 保存频道** 按钮
 
 **提示**：系统会根据选择的频道类型自动显示相应的配置字段。
@@ -179,6 +180,18 @@ curl https://your-domain.com/v1/chat/completions \
   }'
 ```
 
+#### Responses API（OpenAI / Azure）
+
+```bash
+curl https://your-domain.com/v1/responses \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -d '{
+    "model": "gpt-5.1-codex-max",
+    "input": "Hello, Responses API!"
+  }'
+```
+
 #### API 测试工具
 
 管理界面内置了强大的 API 测试工具，无需额外工具即可进行 API 调试：
@@ -206,7 +219,7 @@ curl https://your-domain.com/v1/chat/completions \
 访问 `https://your-domain.com` 即可使用 Web 管理界面，功能包括：
 
 - **📊 数据库管理**：一键初始化数据库表结构
-- **🔗 频道配置管理**：添加、编辑、删除 AI 服务提供商频道（支持 Azure OpenAI 和 OpenAI）
+- **🔗 频道配置管理**：添加、编辑、删除 AI 服务提供商频道（支持 OpenAI、Azure OpenAI、Claude、OpenAI Responses、Azure Responses）
 - **🔑 API Token 管理**：生成、管理和监控 API Token 使用情况
 - **💰 定价配置**：灵活配置不同模型的定价策略
 - **🧪 API 测试工具**：内置 API 测试界面，支持实时调试和错误排查
@@ -224,6 +237,21 @@ curl https://your-domain.com/v1/chat/completions \
 
 目前支持以下 AI 服务提供商：
 
+**OpenAI 配置**
+
+```json
+{
+  "name": "My OpenAI Channel",
+  "type": "openai",
+  "endpoint": "https://api.openai.com/v1/",
+  "api_key": "sk-your-openai-api-key",
+  "deployment_mapper": {
+    "gpt-4": "gpt-4",
+    "gpt-3.5-turbo": "gpt-3.5-turbo"
+  }
+}
+```
+
 **Azure OpenAI 配置**
 
 ```json
@@ -240,17 +268,45 @@ curl https://your-domain.com/v1/chat/completions \
 }
 ```
 
-**OpenAI 配置**
+**Claude 配置**
 
 ```json
 {
-  "name": "My OpenAI Channel",
-  "type": "openai",
+  "name": "My Claude Channel",
+  "type": "claude",
+  "endpoint": "https://api.anthropic.com/v1/",
+  "api_key": "sk-your-claude-api-key",
+  "api_version": "2023-06-01",
+  "deployment_mapper": {
+    "claude-3-5-sonnet-20241022": "claude-3-5-sonnet-20241022"
+  }
+}
+```
+
+**OpenAI Responses 配置**
+
+```json
+{
+  "name": "My OpenAI Responses",
+  "type": "openai-responses",
   "endpoint": "https://api.openai.com/v1/",
   "api_key": "sk-your-openai-api-key",
   "deployment_mapper": {
-    "gpt-4": "gpt-4",
-    "gpt-3.5-turbo": "gpt-3.5-turbo"
+    "gpt-5.1-codex-max": "gpt-5.1-codex-max"
+  }
+}
+```
+
+**Azure OpenAI Responses 配置（v1）**
+
+```json
+{
+  "name": "My Azure Responses",
+  "type": "azure-openai-responses",
+  "endpoint": "https://your-resource.openai.azure.com/",
+  "api_key": "your-azure-api-key",
+  "deployment_mapper": {
+    "gpt-5.1-codex-max": "your-deployment-name"
   }
 }
 ```
@@ -258,10 +314,10 @@ curl https://your-domain.com/v1/chat/completions \
 **配置字段说明**：
 
 - `name`: 频道显示名称
-- `type`: 服务提供商类型（`azure-openai` 或 `openai`）
+- `type`: 服务提供商类型（`openai`、`azure-openai`、`claude`、`openai-responses`、`azure-openai-responses`）
 - `endpoint`: API 端点地址
 - `api_key`: API 密钥
-- `api_version`: API 版本（仅 Azure OpenAI 需要）
+- `api_version`: API 版本（Azure OpenAI / Claude 可用；Azure Responses v1 请留空）
 - `deployment_mapper`: 模型名称映射关系（用于自定义模型名称映射）
 
 ### Token 配置

@@ -67,6 +67,10 @@ const buildProxyRequest = (
 
     // Claude uses x-api-key header instead of Authorization
     targetHeaders.set("x-api-key", config.api_key)
+    // Claude requires anthropic-version header
+    if (config.api_version) {
+        targetHeaders.set("anthropic-version", config.api_version)
+    }
 
     return new Request(targetUrl, {
         method: request.method,
@@ -125,6 +129,7 @@ const checkoutUsageData = async (
 const processStreamData = async (
     lines: string[],
     usageAccumulator: { input_tokens: number; output_tokens: number },
+    usageSaved: { value: boolean },
     saveUsage: (usage: Usage) => Promise<void>
 ): Promise<void> => {
     for (const line of lines) {
@@ -148,28 +153,42 @@ const processStreamData = async (
             }
 
             // Extract output tokens from message_delta event
-            if (event.type === "message_delta" && event.usage) {
+            if (event.type === "message_delta" && event.usage?.output_tokens != null) {
                 usageAccumulator.output_tokens = event.usage.output_tokens
             }
 
             // Handle message_complete event (has complete usage info)
-            if (event.type === "message_complete" && event.message?.usage) {
+            if (event.type === "message_complete" && event.message?.usage && !usageSaved.value) {
                 const usage: Usage = {
                     prompt_tokens: event.message.usage.input_tokens,
                     completion_tokens: event.message.usage.output_tokens,
                     total_tokens: event.message.usage.input_tokens + event.message.usage.output_tokens,
                 }
                 await saveUsage(usage)
+                usageSaved.value = true
             }
 
             // When stream ends with message_stop (fallback for old API versions)
             if (event.type === "message_stop") {
-                const usage: Usage = {
-                    prompt_tokens: usageAccumulator.input_tokens,
-                    completion_tokens: usageAccumulator.output_tokens,
-                    total_tokens: usageAccumulator.input_tokens + usageAccumulator.output_tokens,
+                if (event.message?.usage && !usageSaved.value) {
+                    const usage: Usage = {
+                        prompt_tokens: event.message.usage.input_tokens,
+                        completion_tokens: event.message.usage.output_tokens,
+                        total_tokens: event.message.usage.input_tokens + event.message.usage.output_tokens,
+                    }
+                    await saveUsage(usage)
+                    usageSaved.value = true
+                    continue
                 }
-                await saveUsage(usage)
+                if (!usageSaved.value) {
+                    const usage: Usage = {
+                        prompt_tokens: usageAccumulator.input_tokens,
+                        completion_tokens: usageAccumulator.output_tokens,
+                        total_tokens: usageAccumulator.input_tokens + usageAccumulator.output_tokens,
+                    }
+                    await saveUsage(usage)
+                    usageSaved.value = true
+                }
             }
         } catch (e) {
             console.error("Error parsing Claude stream data:", e, "Line:", jsonContent)
@@ -202,6 +221,7 @@ const handleStreamResponse = async (
         input_tokens: 0,
         output_tokens: 0,
     }
+    const usageSaved = { value: false }
 
     while (true) {
         const { done, value } = await reader.read()
@@ -216,12 +236,12 @@ const handleStreamResponse = async (
         const lines = buffer.split('\n')
         buffer = lines.pop() || ""
 
-        await processStreamData(lines, usageAccumulator, saveUsage)
+        await processStreamData(lines, usageAccumulator, usageSaved, saveUsage)
     }
 
     // Process any remaining buffered data
     if (buffer.trim()) {
-        await processStreamData([buffer], usageAccumulator, saveUsage)
+        await processStreamData([buffer], usageAccumulator, usageSaved, saveUsage)
     }
 }
 
@@ -241,10 +261,11 @@ export default {
     async fetch(
         c: Context<HonoCustomType>,
         config: ChannelConfig,
+        requestBody: any,
         saveUsage: (usage: Usage) => Promise<void>,
     ): Promise<Response> {
         // Parse request body
-        const reqJson = await c.req.json()
+        const reqJson = requestBody
         const { model: modelName, stream } = reqJson;
 
         // Validate model support

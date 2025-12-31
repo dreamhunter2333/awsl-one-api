@@ -346,6 +346,8 @@ export function Channels() {
                   <option value="azure-openai">Azure OpenAI</option>
                   <option value="openai">OpenAI</option>
                   <option value="claude">Claude</option>
+                  <option value="openai-responses">OpenAI Responses</option>
+                  <option value="azure-openai-responses">Azure OpenAI Responses</option>
                 </Select>
               </div>
 
@@ -370,15 +372,17 @@ export function Channels() {
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="api_version">API 版本（可选）</Label>
-                <Input
-                  id="api_version"
-                  value={formData.api_version || ''}
-                  onChange={(e) => setFormData({ ...formData, api_version: e.target.value })}
-                  placeholder="例如: 2024-02-01"
-                />
-              </div>
+              {(formData.type === 'azure-openai' || formData.type === 'claude') && (
+                <div className="space-y-2">
+                  <Label htmlFor="api_version">API 版本（可选）</Label>
+                  <Input
+                    id="api_version"
+                    value={formData.api_version || ''}
+                    onChange={(e) => setFormData({ ...formData, api_version: e.target.value })}
+                    placeholder="Claude: 2023-06-01 / Azure: 2024-02-01"
+                  />
+                </div>
+              )}
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">

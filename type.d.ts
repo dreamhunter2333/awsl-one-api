@@ -32,7 +32,14 @@ type ApiTokenRow = BaseDbRow & {
     usage: number;
 }
 
-type ChannelType = "azure-openai" | "openai" | "claude" | undefined | null;
+type ChannelType =
+    | "azure-openai"
+    | "openai"
+    | "claude"
+    | "openai-responses"
+    | "azure-openai-responses"
+    | undefined
+    | null;
 
 type ChannelConfig = {
     name: string;
