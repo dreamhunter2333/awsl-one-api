@@ -63,6 +63,7 @@ type Usage = {
     prompt_tokens?: number,
     completion_tokens?: number,
     total_tokens?: number,
+    cached_tokens?: number,
 }
 
 type AwslKeyPayload = {
@@ -79,6 +80,7 @@ type CommonResponse = {
 type ModelPricing = {
     input: number;
     output: number;
+    cache?: number;
 }
 
 type ApiTokenData = {

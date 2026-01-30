@@ -1,28 +1,10 @@
 import { Context } from "hono"
-
-type OpenAIResponsesUsage = {
-    input_tokens?: number;
-    output_tokens?: number;
-    total_tokens?: number;
-    prompt_tokens?: number;
-    completion_tokens?: number;
-}
-
-type OpenAIResponsesResponse = {
-    usage?: OpenAIResponsesUsage;
-    input_tokens?: number;
-    output_tokens?: number;
-    total_tokens?: number;
-    prompt_tokens?: number;
-    completion_tokens?: number;
-}
-
-type OpenAIResponsesStreamEvent = {
-    type?: string;
-    response?: OpenAIResponsesResponse;
-    delta?: string;
-    text?: string;
-}
+import {
+    OpenAIResponsesResponse,
+    OpenAIResponsesStreamEvent,
+    extractUsageFromResponse,
+    estimateUsageFromBodies,
+} from "./shared/usage-utils"
 
 const buildProxyRequest = (
     request: Request,
@@ -42,69 +24,6 @@ const buildProxyRequest = (
         headers: targetHeaders,
         body: JSON.stringify(reqJson),
     })
-}
-
-const normalizeUsage = (raw?: OpenAIResponsesUsage): Usage | null => {
-    if (!raw) return null
-    const promptTokens = raw.prompt_tokens ?? raw.input_tokens
-    const completionTokens = raw.completion_tokens ?? raw.output_tokens
-    const totalTokens = raw.total_tokens ?? (
-        (promptTokens ?? 0) + (completionTokens ?? 0)
-    )
-    if (promptTokens == null && completionTokens == null && totalTokens == null) {
-        return null
-    }
-    return {
-        prompt_tokens: promptTokens,
-        completion_tokens: completionTokens,
-        total_tokens: totalTokens,
-    }
-}
-
-const extractUsageFromResponse = (res?: OpenAIResponsesResponse): Usage | null => {
-    if (!res) return null
-    return normalizeUsage(res.usage || res)
-}
-
-const estimateTokensFromText = (text: string): number => {
-    if (!text) return 0
-    const bytes = new TextEncoder().encode(text).length
-    return Math.ceil(bytes / 4)
-}
-
-const estimateUsageFromBodies = (
-    requestBody: any,
-    responseBody?: any,
-    streamedOutputText?: string
-): Usage | null => {
-    const promptText = requestBody ? JSON.stringify(requestBody) : ""
-    const completionText = streamedOutputText
-        ? streamedOutputText
-        : (responseBody ? JSON.stringify(responseBody) : "")
-    const promptTokens = estimateTokensFromText(promptText)
-    const completionTokens = estimateTokensFromText(completionText)
-    if (!promptTokens && !completionTokens) return null
-    return {
-        prompt_tokens: promptTokens,
-        completion_tokens: completionTokens,
-        total_tokens: promptTokens + completionTokens,
-    }
-}
-
-const checkoutUsageData = async (
-    saveUsage: (usage: Usage) => Promise<void>,
-    response: Response | OpenAIResponsesResponse
-): Promise<void> => {
-    try {
-        const res = response instanceof Response
-            ? await response.clone().json<OpenAIResponsesResponse>()
-            : response
-        const usage = extractUsageFromResponse(res)
-        if (!usage) return
-        await saveUsage(usage)
-    } catch (error) {
-        console.error("Error logging usage data:", error)
-    }
 }
 
 const processStreamData = async (

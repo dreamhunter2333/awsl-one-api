@@ -31,23 +31,28 @@ export const TokenUtils = {
     async processUsage(c: Context<HonoCustomType>, apiKey: string, model: string, targetChannelKey: string, targetChannelConfig: ChannelConfig, usage: Usage): Promise<void> {
         console.log("Usage data:", usage);
 
-        // Get pricing and calculate cost
         const pricing = await this.getPricing(c, model, targetChannelConfig);
         const hasTokens = usage.prompt_tokens != null && usage.completion_tokens != null;
 
         if (pricing && hasTokens) {
             const inputCost = usage.prompt_tokens! * pricing.input;
             const outputCost = usage.completion_tokens! * pricing.output;
-            const totalCost = inputCost + outputCost;
-            // Update token usage and log data
+
+            let cacheCost = 0;
+            if (usage.cached_tokens && usage.cached_tokens > 0 && pricing.cache) {
+                cacheCost = usage.cached_tokens * pricing.cache;
+            }
+
+            const totalCost = inputCost + outputCost + cacheCost;
+
             await this.updateUsage(c, apiKey, totalCost);
-            // 长度不够直接显示 *
-            var maskedApiKey = apiKey.length < 3 ? '*'.repeat(apiKey.length) : (
+
+            const maskedApiKey = apiKey.length < 3 ? '*'.repeat(apiKey.length) : (
                 apiKey.slice(0, apiKey.length / 3)
                 + '*'.repeat(apiKey.length / 3)
                 + apiKey.slice((2 * apiKey.length) / 3)
             );
-            console.log(`Model: ${model}, Channel: ${targetChannelKey}, apiKey: ${maskedApiKey}, Cost: ${totalCost}`);
+            console.log(`Model: ${model}, Channel: ${targetChannelKey}, apiKey: ${maskedApiKey}, Cost: ${totalCost} (input: ${inputCost}, cache: ${cacheCost}, output: ${outputCost})`);
         } else {
             console.warn(`No pricing found for model: ${model} in channel: ${targetChannelKey}`);
         }

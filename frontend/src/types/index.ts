@@ -28,6 +28,7 @@ export interface TokenConfig {
 export interface PricingModel {
   input: number
   output: number
+  cache?: number
 }
 
 export type PricingConfig = Record<string, PricingModel>
