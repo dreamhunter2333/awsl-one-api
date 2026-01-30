@@ -5,7 +5,7 @@ import {
     ChannelGetEndpoint, ChannelUpsertEndpoint, ChannelDeleteEndpoint
 } from "./channel_api"
 import {
-    TokenListEndpoint, TokenUpsertEndpoint, TokenDeleteEndpoint
+    TokenListEndpoint, TokenUpsertEndpoint, TokenDeleteEndpoint, TokenResetUsageEndpoint
 } from "./token_api"
 import {
     PricingGetEndpoint, PricingUpdateEndpoint
@@ -34,6 +34,7 @@ api.delete("/api/admin/channel/:key", ChannelDeleteEndpoint)
 // Token management routes
 api.get("/api/admin/token", TokenListEndpoint)
 api.post("/api/admin/token/:key", TokenUpsertEndpoint)
+api.post("/api/admin/token/:key/reset", TokenResetUsageEndpoint)
 api.delete("/api/admin/token/:key", TokenDeleteEndpoint)
 
 // Pricing management routes

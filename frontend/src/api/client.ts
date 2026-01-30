@@ -161,6 +161,9 @@ export const apiClient = {
   deleteToken: (key: string) =>
     request(`/api/admin/token/${encodeURIComponent(key)}`, { method: 'DELETE' }),
 
+  resetTokenUsage: (key: string) =>
+    request(`/api/admin/token/${encodeURIComponent(key)}/reset`, { method: 'POST' }),
+
   // Pricing APIs
   getPricing: () => request<ApiResponse>('/api/admin/pricing', { method: 'GET' }),
 

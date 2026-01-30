@@ -98,6 +98,36 @@ export class TokenUpsertEndpoint extends OpenAPIRoute {
     }
 }
 
+// Token 重置额度 API
+export class TokenResetUsageEndpoint extends OpenAPIRoute {
+    schema = {
+        tags: ['Admin API'],
+        summary: 'Reset token usage to zero',
+        request: {
+            params: z.object({
+                key: z.string().describe('Token key'),
+            }),
+        },
+        responses: {
+            ...CommonSuccessfulResponse(z.boolean()),
+            ...CommonErrorResponse,
+        },
+    };
+
+    async handle(c: Context<HonoCustomType>) {
+        const { key } = c.req.param();
+
+        const result = await c.env.DB.prepare(
+            `UPDATE api_token SET usage = 0, updated_at = datetime('now') WHERE key = ?`
+        ).bind(key).run();
+
+        return {
+            success: true,
+            data: result.success
+        } as CommonResponse;
+    }
+}
+
 // Token 删除 API
 export class TokenDeleteEndpoint extends OpenAPIRoute {
     schema = {

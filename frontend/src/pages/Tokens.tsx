@@ -25,6 +25,7 @@ import {
   ChevronRight,
   AlertCircle,
   Search,
+  RotateCcw,
 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { PageContainer } from '@/components/ui/page-container'
@@ -106,6 +107,19 @@ export function Tokens() {
     },
   })
 
+  const resetUsageMutation = useMutation({
+    mutationFn: async (key: string) => {
+      return apiClient.resetTokenUsage(key)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tokens'] })
+      addToast('已用额度已重置', 'success')
+    },
+    onError: (error: any) => {
+      addToast('重置失败：' + error.message, 'error')
+    },
+  })
+
   const resetForm = () => {
     setFormData({ name: '', channel_keys: [], total_quota: 0 })
     setTokenKey('')
@@ -134,6 +148,12 @@ export function Tokens() {
   const handleDelete = (key: string) => {
     if (confirm(`确定要删除此令牌吗？`)) {
       deleteMutation.mutate(key)
+    }
+  }
+
+  const handleResetUsage = (key: string) => {
+    if (confirm(`确定要重置此令牌的已用额度吗？`)) {
+      resetUsageMutation.mutate(key)
     }
   }
 
@@ -319,6 +339,13 @@ export function Tokens() {
                                 编辑
                               </button>
                               <button
+                                className="w-full px-3 py-2 text-sm text-left hover:bg-muted flex items-center gap-2"
+                                onClick={() => handleResetUsage(token.key)}
+                              >
+                                <RotateCcw className="h-4 w-4" />
+                                重置额度
+                              </button>
+                              <button
                                 className="w-full px-3 py-2 text-sm text-left hover:bg-muted flex items-center gap-2 text-destructive"
                                 onClick={() => handleDelete(token.key)}
                               >
@@ -389,10 +416,13 @@ export function Tokens() {
                         </div>
                       </div>
                       <div className="flex items-center gap-1 flex-shrink-0">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(token)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(token)} title="编辑">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(token.key)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleResetUsage(token.key)} title="重置额度">
+                          <RotateCcw className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(token.key)} title="删除">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
