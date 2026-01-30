@@ -282,3 +282,7 @@ class ResponsesProxyEndpoint extends OpenAPIRoute {
 }
 
 api.post("/v1/responses", ResponsesProxyEndpoint)
+
+// Models endpoint
+import { ModelsEndpoint } from "./models"
+api.get("/v1/models", ModelsEndpoint)
