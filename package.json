@@ -8,7 +8,7 @@
   "dependencies": {
     "chanfana": "^3.0.0",
     "hono": "^4.11.7",
-    "zod": "^4.3.6"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "wrangler": "^4.61.1"
