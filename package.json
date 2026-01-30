@@ -6,7 +6,7 @@
     "cf-typegen": "wrangler types --include-env=false"
   },
   "dependencies": {
-    "chanfana": "^3.0.0",
+    "chanfana": "^2.8.3",
     "hono": "^4.11.7",
     "zod": "^3.25.76"
   },
