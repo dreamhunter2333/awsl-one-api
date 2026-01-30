@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/auth'
 import { useToast } from '@/components/ui/use-toast'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Menu, Sparkles } from 'lucide-react'
 
 interface AppLayoutProps {
   children: ReactNode
@@ -23,6 +24,8 @@ export function AppLayout({ children }: AppLayoutProps) {
   const [adminToken, setAdminToken] = useState('')
   const [authError, setAuthError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
   const { login, showAuthModal, closeAuthModal, openAuthModal } = useAuthStore()
   const { addToast } = useToast()
 
@@ -44,11 +47,58 @@ export function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      <Sidebar onAuthClick={openAuthModal} />
+      <Sidebar
+        onAuthClick={openAuthModal}
+        className="hidden lg:flex"
+        collapsed={isSidebarCollapsed}
+        onToggleCollapse={() => setIsSidebarCollapsed((prev) => !prev)}
+        showCollapseToggle
+      />
 
-      <main className="flex-1 overflow-y-auto bg-background">
-        {children}
-      </main>
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex items-center justify-between border-b bg-card/80 backdrop-blur-sm px-4 py-3 lg:hidden sticky top-0 z-30">
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsMobileNavOpen(true)}
+            aria-label="打开侧边栏"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
+              <Sparkles className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-semibold tracking-tight">Awsl One API</span>
+          </div>
+          <div className="h-10 w-10" />
+        </header>
+
+        <main className="flex-1 overflow-y-auto bg-background">
+          <div className="mx-auto max-w-7xl w-full">
+            {children}
+          </div>
+        </main>
+      </div>
+
+      {isMobileNavOpen && (
+        <div className="fixed inset-0 z-40 lg:hidden">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setIsMobileNavOpen(false)}
+          />
+          <div className="absolute inset-y-0 left-0 w-72 max-w-[85%] shadow-2xl">
+            <Sidebar
+              onAuthClick={openAuthModal}
+              onNavigate={() => setIsMobileNavOpen(false)}
+              onClose={() => setIsMobileNavOpen(false)}
+              collapsed={false}
+              showCollapseToggle={false}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Auth Dialog */}
       <Dialog open={showAuthModal} onOpenChange={(open) => !open && closeAuthModal()}>

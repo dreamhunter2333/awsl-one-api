@@ -1,25 +1,42 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/api/client'
 import { Channel, ChannelConfig } from '@/types'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/use-toast'
+import { cn } from '@/lib/utils'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Plus, RefreshCw, Pencil, Trash2, FileJson, FileText } from 'lucide-react'
+  Plus,
+  RefreshCw,
+  Pencil,
+  Trash2,
+  FileJson,
+  FileText,
+  Link as LinkIcon,
+  ArrowLeft,
+  Check,
+  MoreHorizontal,
+  Search,
+  ArrowRight,
+  Globe,
+  Cpu,
+} from 'lucide-react'
+import { PageContainer } from '@/components/ui/page-container'
 
 type EditMode = 'form' | 'json'
+
+const channelTypes = [
+  { value: 'azure-openai', label: 'Azure OpenAI' },
+  { value: 'openai', label: 'OpenAI' },
+  { value: 'claude', label: 'Claude' },
+  { value: 'openai-responses', label: 'OpenAI Responses' },
+  { value: 'azure-openai-responses', label: 'Azure OpenAI Responses' },
+]
 
 export function Channels() {
   const [view, setView] = useState<'list' | 'form'>('list')
@@ -36,17 +53,25 @@ export function Channels() {
   const [channelKey, setChannelKey] = useState('')
   const [jsonValue, setJsonValue] = useState('')
   const [mapperRows, setMapperRows] = useState<Array<{ request: string; deployment: string }>>([])
+  const [searchQuery, setSearchQuery] = useState('')
+  const [openMenu, setOpenMenu] = useState<string | null>(null)
 
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['channels'],
     queryFn: async () => {
       const response = await apiClient.getChannels()
       return response.data as Channel[]
     },
   })
+
+  useEffect(() => {
+    const handleClick = () => setOpenMenu(null)
+    document.addEventListener('click', handleClick)
+    return () => document.removeEventListener('click', handleClick)
+  }, [])
 
   const saveMutation = useMutation({
     mutationFn: async ({ key, config }: { key: string; config: any }) => {
@@ -104,7 +129,6 @@ export function Channels() {
     setFormData(config)
     setJsonValue(JSON.stringify(config, null, 2))
 
-    // Convert deployment_mapper to rows
     if (config.deployment_mapper) {
       const rows = Object.entries(config.deployment_mapper).map(([request, deployment]) => ({
         request,
@@ -112,12 +136,11 @@ export function Channels() {
       }))
       setMapperRows(rows)
     }
-
     setView('form')
   }
 
   const handleDelete = (key: string) => {
-    if (confirm(`确定要删除频道 "${key}" 吗？`)) {
+    if (confirm(`确定要删除此频道吗？`)) {
       deleteMutation.mutate(key)
     }
   }
@@ -135,7 +158,6 @@ export function Channels() {
         return
       }
 
-      // Build deployment_mapper from rows
       const deployment_mapper: Record<string, string> = {}
       mapperRows.forEach((row) => {
         if (row.request && row.deployment) {
@@ -143,17 +165,14 @@ export function Channels() {
         }
       })
 
-      config = {
-        ...formData,
-        deployment_mapper,
-      }
+      config = { ...formData, deployment_mapper }
       if (!formData.api_version) {
         delete config.api_version
       }
     } else {
       try {
         config = JSON.parse(jsonValue)
-      } catch (error) {
+      } catch {
         addToast('JSON格式错误', 'error')
         return
       }
@@ -164,7 +183,6 @@ export function Channels() {
 
   const toggleEditMode = () => {
     if (editMode === 'form') {
-      // Switch to JSON
       const deployment_mapper: Record<string, string> = {}
       mapperRows.forEach((row) => {
         if (row.request && row.deployment) {
@@ -175,7 +193,6 @@ export function Channels() {
       setJsonValue(JSON.stringify(config, null, 2))
       setEditMode('json')
     } else {
-      // Switch to form
       try {
         const config = JSON.parse(jsonValue)
         setFormData(config)
@@ -187,7 +204,7 @@ export function Channels() {
           setMapperRows(rows)
         }
         setEditMode('form')
-      } catch (error) {
+      } catch {
         addToast('JSON格式错误', 'error')
       }
     }
@@ -207,257 +224,381 @@ export function Channels() {
     setMapperRows(newRows)
   }
 
+  const getTypeLabel = (type: string) => {
+    return channelTypes.find((t) => t.value === type)?.label || type
+  }
+
+  const filteredData = data?.filter((channel) => {
+    if (!searchQuery) return true
+    const config = typeof channel.value === 'string' ? JSON.parse(channel.value) : channel.value
+    return (
+      config.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      channel.key.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+  })
+
+  // List View
   if (view === 'list') {
     return (
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold tracking-tight">频道管理</h1>
-        </div>
+      <PageContainer
+        title="频道管理"
+        description="配置 AI 服务提供商连接"
+        actions={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+              <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
+            </Button>
+            <Button size="sm" onClick={handleAdd}>
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">添加</span>
+            </Button>
+          </div>
+        }
+      >
+        {/* Search */}
+        {data && data.length > 0 && (
+          <div className="mb-4">
+            <div className="relative max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="搜索频道..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+        )}
 
-        <Card>
-          <CardHeader>
-            <div className="flex justify-end gap-2">
-              <Button onClick={handleAdd}>
-                <Plus className="h-4 w-4" />
+        {isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-muted-foreground">加载中...</span>
+            </div>
+          </div>
+        ) : !data || data.length === 0 ? (
+          <Card className="border-dashed border-2">
+            <CardContent className="flex flex-col items-center justify-center py-16 px-4">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
+                <LinkIcon className="h-7 w-7 text-primary" />
+              </div>
+              <h3 className="font-semibold text-lg mb-2">添加您的第一个频道</h3>
+              <p className="text-muted-foreground text-sm text-center max-w-sm mb-6">
+                频道连接到 AI 服务提供商（如 OpenAI、Azure、Claude），用于代理和转发 API 请求。
+              </p>
+              <Button onClick={handleAdd} size="lg">
+                <Plus className="h-4 w-4 mr-2" />
                 添加频道
               </Button>
-              <Button variant="secondary" onClick={() => refetch()}>
-                <RefreshCw className="h-4 w-4" />
-                刷新
-              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <div className="divide-y">
+              {filteredData?.map((channel) => {
+                const config = typeof channel.value === 'string' ? JSON.parse(channel.value) : channel.value
+                const modelCount = Object.keys(config.deployment_mapper || {}).length
+                const isMenuOpen = openMenu === channel.key
+
+                return (
+                  <div
+                    key={channel.key}
+                    className="p-4 hover:bg-muted/30 transition-colors"
+                  >
+                    {/* Mobile Layout */}
+                    <div className="md:hidden space-y-3">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium truncate">{config.name}</div>
+                          <div className="text-xs text-muted-foreground font-mono mt-0.5">{channel.key}</div>
+                        </div>
+                        <div className="relative">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setOpenMenu(isMenuOpen ? null : channel.key)
+                            }}
+                          >
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                          {isMenuOpen && (
+                            <div className="absolute right-0 top-full mt-1 w-32 bg-popover border rounded-lg shadow-lg py-1 z-10">
+                              <button
+                                className="w-full px-3 py-2 text-sm text-left hover:bg-muted flex items-center gap-2"
+                                onClick={() => handleEdit(channel)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                                编辑
+                              </button>
+                              <button
+                                className="w-full px-3 py-2 text-sm text-left hover:bg-muted flex items-center gap-2 text-destructive"
+                                onClick={() => handleDelete(channel.key)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                                删除
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="px-2 py-0.5 rounded bg-muted text-muted-foreground text-xs">
+                          {getTypeLabel(config.type)}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {modelCount} 个模型
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Desktop Layout */}
+                    <div className="hidden md:flex md:items-center md:gap-4">
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium">{config.name}</div>
+                        <div className="text-xs text-muted-foreground font-mono">{channel.key}</div>
+                      </div>
+                      <div className="flex-shrink-0">
+                        <span className="px-2 py-1 rounded-md bg-muted text-muted-foreground text-xs font-medium whitespace-nowrap">
+                          {getTypeLabel(config.type)}
+                        </span>
+                      </div>
+                      <div className="w-40 text-sm text-muted-foreground truncate font-mono" title={config.endpoint}>
+                        {config.endpoint.replace(/^https?:\/\//, '').split('/')[0]}
+                      </div>
+                      <div className="w-20 text-sm text-center flex-shrink-0">
+                        <span className="text-muted-foreground">{modelCount} 模型</span>
+                      </div>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(channel)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive" onClick={() => handleDelete(channel.key)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              })}
+              {filteredData?.length === 0 && searchQuery && (
+                <div className="p-8 text-center text-muted-foreground">
+                  未找到匹配的频道
+                </div>
+              )}
             </div>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">加载中...</div>
-            ) : !data || data.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">暂无频道数据</div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>名称</TableHead>
-                    <TableHead>标识</TableHead>
-                    <TableHead>类型</TableHead>
-                    <TableHead>端点</TableHead>
-                    <TableHead>模型数</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.map((channel) => {
-                    const config =
-                      typeof channel.value === 'string'
-                        ? JSON.parse(channel.value)
-                        : channel.value
-                    return (
-                      <TableRow key={channel.key}>
-                        <TableCell className="font-medium">{config.name}</TableCell>
-                        <TableCell className="font-mono text-sm">{channel.key}</TableCell>
-                        <TableCell>{config.type}</TableCell>
-                        <TableCell className="max-w-xs truncate">{config.endpoint}</TableCell>
-                        <TableCell>
-                          {Object.keys(config.deployment_mapper || {}).length}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleEdit(channel)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDelete(channel.key)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+          </Card>
+        )}
+      </PageContainer>
     )
   }
 
+  // Form View
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">
-          {editingKey ? '编辑频道' : '添加频道'}
-        </h1>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={toggleEditMode}>
-              {editMode === 'form' ? <FileJson className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
-              {editMode === 'form' ? '切换到JSON模式' : '切换到表单模式'}
-            </Button>
-            <Button onClick={handleSave}>保存频道</Button>
-            <Button variant="secondary" onClick={() => setView('list')}>
-              返回列表
+    <div className="p-4 md:p-6 lg:p-8 animate-in">
+      <div className="max-w-2xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <Button variant="ghost" size="sm" className="mb-3 -ml-2 text-muted-foreground" onClick={() => setView('list')}>
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            返回列表
+          </Button>
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold tracking-tight">{editingKey ? '编辑频道' : '添加频道'}</h1>
+            <Button variant="outline" size="sm" onClick={toggleEditMode}>
+              {editMode === 'form' ? <FileJson className="h-4 w-4 mr-1" /> : <FileText className="h-4 w-4 mr-1" />}
+              {editMode === 'form' ? 'JSON' : '表单'}
             </Button>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="channelKey">频道标识 *</Label>
+        </div>
+
+        <div className="space-y-6">
+        {/* Channel Key */}
+        <Card>
+          <CardContent className="p-5">
+            <h3 className="font-medium mb-4">频道标识</h3>
+            <p className="text-sm text-muted-foreground mb-3">用于内部识别的唯一标识</p>
             <Input
-              id="channelKey"
               value={channelKey}
               onChange={(e) => setChannelKey(e.target.value)}
-              placeholder="例如: azure-openai-1"
+              placeholder="例如：azure-gpt4-east"
               disabled={!!editingKey}
+              className="font-mono text-sm"
             />
-          </div>
+          </CardContent>
+        </Card>
 
-          {editMode === 'form' ? (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="name">频道名称 *</Label>
-                <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="例如: Azure OpenAI"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="type">频道类型 *</Label>
-                <Select
-                  id="type"
-                  value={formData.type}
-                  onChange={(e) =>
-                    setFormData({ ...formData, type: e.target.value as any })
-                  }
-                >
-                  <option value="azure-openai">Azure OpenAI</option>
-                  <option value="openai">OpenAI</option>
-                  <option value="claude">Claude</option>
-                  <option value="openai-responses">OpenAI Responses</option>
-                  <option value="azure-openai-responses">Azure OpenAI Responses</option>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="endpoint">API 端点 *</Label>
-                <Input
-                  id="endpoint"
-                  value={formData.endpoint}
-                  onChange={(e) => setFormData({ ...formData, endpoint: e.target.value })}
-                  placeholder="https://your-resource.openai.azure.com/"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="api_key">API 密钥 *</Label>
-                <Input
-                  id="api_key"
-                  type="password"
-                  value={formData.api_key}
-                  onChange={(e) => setFormData({ ...formData, api_key: e.target.value })}
-                  placeholder="your-api-key"
-                />
-              </div>
-
-              {(formData.type === 'azure-openai' || formData.type === 'claude') && (
-                <div className="space-y-2">
-                  <Label htmlFor="api_version">API 版本（可选）</Label>
-                  <Input
-                    id="api_version"
-                    value={formData.api_version || ''}
-                    onChange={(e) => setFormData({ ...formData, api_version: e.target.value })}
-                    placeholder="Claude: 2023-06-01 / Azure: 2024-02-01"
-                  />
+        {editMode === 'form' ? (
+          <>
+            {/* Basic Info */}
+            <Card>
+              <CardContent className="p-5">
+                <h3 className="font-medium mb-4">基本信息</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm">频道名称 <span className="text-destructive">*</span></Label>
+                    <Input
+                      value={formData.name}
+                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      placeholder="例如：Azure GPT-4 东部"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-sm">频道类型 <span className="text-destructive">*</span></Label>
+                    <Select
+                      value={formData.type}
+                      onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                    >
+                      {channelTypes.map((type) => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </Select>
+                  </div>
                 </div>
-              )}
+              </CardContent>
+            </Card>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>模型部署映射</Label>
-                  <Button type="button" variant="secondary" size="sm" onClick={addMapperRow}>
-                    <Plus className="h-4 w-4" />
-                    添加映射
+            {/* Connection */}
+            <Card>
+              <CardContent className="p-5">
+                <h3 className="font-medium mb-4">连接配置</h3>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-sm flex items-center gap-2">
+                      <Globe className="h-4 w-4 text-muted-foreground" />
+                      API 端点 <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      value={formData.endpoint}
+                      onChange={(e) => setFormData({ ...formData, endpoint: e.target.value })}
+                      placeholder="https://your-resource.openai.azure.com/"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-sm">API 密钥 <span className="text-destructive">*</span></Label>
+                      <Input
+                        type="password"
+                        value={formData.api_key}
+                        onChange={(e) => setFormData({ ...formData, api_key: e.target.value })}
+                        placeholder="sk-..."
+                      />
+                    </div>
+                    {(formData.type === 'azure-openai' || formData.type === 'claude' || formData.type === 'azure-openai-responses') && (
+                      <div className="space-y-2">
+                        <Label className="text-sm">API 版本</Label>
+                        <Input
+                          value={formData.api_version || ''}
+                          onChange={(e) => setFormData({ ...formData, api_version: e.target.value })}
+                          placeholder="2024-02-01"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Model Mappings */}
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-medium flex items-center gap-2">
+                      <Cpu className="h-4 w-4 text-muted-foreground" />
+                      模型映射
+                    </h3>
+                    <p className="text-sm text-muted-foreground">将请求模型名映射到实际部署名</p>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={addMapperRow}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    添加
                   </Button>
                 </div>
+
                 {mapperRows.length === 0 ? (
-                  <div className="text-center py-4 text-muted-foreground text-sm">
-                    暂无映射，点击上方按钮添加
-                  </div>
+                  <button
+                    type="button"
+                    onClick={addMapperRow}
+                    className="w-full py-8 border-2 border-dashed rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors flex flex-col items-center justify-center gap-2"
+                  >
+                    <Plus className="h-5 w-5" />
+                    添加模型映射
+                  </button>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>请求模型名</TableHead>
-                        <TableHead>部署模型名</TableHead>
-                        <TableHead className="w-20">操作</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {mapperRows.map((row, index) => (
-                        <TableRow key={index}>
-                          <TableCell>
-                            <Input
-                              value={row.request}
-                              onChange={(e) =>
-                                updateMapperRow(index, 'request', e.target.value)
-                              }
-                              placeholder="例如: gpt-4"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Input
-                              value={row.deployment}
-                              onChange={(e) =>
-                                updateMapperRow(index, 'deployment', e.target.value)
-                              }
-                              placeholder="例如: gpt-4-deployment"
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              type="button"
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => removeMapperRow(index)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <div className="space-y-2">
+                    {mapperRows.map((row, index) => (
+                      <div key={index} className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                        <Input
+                          value={row.request}
+                          onChange={(e) => updateMapperRow(index, 'request', e.target.value)}
+                          placeholder="gpt-4"
+                          className="flex-1 bg-background text-sm"
+                        />
+                        <ArrowRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <Input
+                          value={row.deployment}
+                          onChange={(e) => updateMapperRow(index, 'deployment', e.target.value)}
+                          placeholder="gpt-4-0613"
+                          className="flex-1 bg-background text-sm"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-destructive hover:text-destructive flex-shrink-0"
+                          onClick={() => removeMapperRow(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </div>
-            </>
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="jsonValue">频道配置 (JSON)</Label>
+              </CardContent>
+            </Card>
+          </>
+        ) : (
+          <Card>
+            <CardContent className="p-5">
+              <h3 className="font-medium mb-4">JSON 配置</h3>
               <Textarea
-                id="jsonValue"
                 value={jsonValue}
                 onChange={(e) => setJsonValue(e.target.value)}
-                rows={20}
+                rows={18}
                 className="font-mono text-sm"
                 placeholder='{"name": "Azure OpenAI", "type": "azure-openai", ...}'
               />
-            </div>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <Button variant="outline" onClick={() => setView('list')}>
+            取消
+          </Button>
+          <Button onClick={handleSave} disabled={saveMutation.isPending}>
+            {saveMutation.isPending ? (
+              <>
+                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                保存中...
+              </>
+            ) : (
+              <>
+                <Check className="h-4 w-4 mr-2" />
+                保存频道
+              </>
+            )}
+          </Button>
+        </div>
+        </div>
+      </div>
     </div>
   )
 }

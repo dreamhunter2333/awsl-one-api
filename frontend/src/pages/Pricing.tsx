@@ -2,22 +2,24 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/api/client'
 import { PricingConfig } from '@/types'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/components/ui/use-toast'
-import { Alert, AlertDescription } from '@/components/ui/alert'
+import { cn } from '@/lib/utils'
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { Plus, RefreshCw, Trash2, FileJson, FileText, Info } from 'lucide-react'
+  Plus,
+  RefreshCw,
+  Trash2,
+  FileJson,
+  FileText,
+  DollarSign,
+  Check,
+  Info,
+  Search,
+} from 'lucide-react'
+import { PageContainer } from '@/components/ui/page-container'
 
 type EditMode = 'table' | 'json'
 
@@ -27,12 +29,12 @@ export function Pricing() {
   const [pricingRows, setPricingRows] = useState<
     Array<{ model: string; input: number; output: number }>
   >([])
-  const [isInitialized, setIsInitialized] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   const { addToast } = useToast()
   const queryClient = useQueryClient()
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, isFetching, refetch } = useQuery({
     queryKey: ['pricing'],
     queryFn: async () => {
       const response = await apiClient.getPricing()
@@ -40,9 +42,8 @@ export function Pricing() {
     },
   })
 
-  // Initialize rows when data first loads - sync server state to local editable state
   useEffect(() => {
-    if (data && !isInitialized) {
+    if (data) {
       const rows = Object.entries(data).map(([model, pricing]) => ({
         model,
         input: pricing.input,
@@ -50,9 +51,8 @@ export function Pricing() {
       }))
       setPricingRows(rows)
       setJsonValue(JSON.stringify(data, null, 2))
-      setIsInitialized(true)
     }
-  }, [data, isInitialized])
+  }, [data])
 
   const saveMutation = useMutation({
     mutationFn: async (config: PricingConfig) => {
@@ -88,7 +88,7 @@ export function Pricing() {
     } else {
       try {
         config = JSON.parse(jsonValue)
-      } catch (error) {
+      } catch {
         addToast('JSON格式错误', 'error')
         return
       }
@@ -99,7 +99,6 @@ export function Pricing() {
 
   const toggleEditMode = () => {
     if (editMode === 'table') {
-      // Switch to JSON
       const config: PricingConfig = {}
       pricingRows.forEach((row) => {
         if (row.model) {
@@ -112,7 +111,6 @@ export function Pricing() {
       setJsonValue(JSON.stringify(config, null, 2))
       setEditMode('json')
     } else {
-      // Switch to table
       try {
         const config = JSON.parse(jsonValue)
         const rows = Object.entries(config).map(([model, pricing]: [string, unknown]) => ({
@@ -122,7 +120,7 @@ export function Pricing() {
         }))
         setPricingRows(rows)
         setEditMode('table')
-      } catch (error) {
+      } catch {
         addToast('JSON格式错误', 'error')
       }
     }
@@ -136,134 +134,164 @@ export function Pricing() {
     setPricingRows(pricingRows.filter((_, i) => i !== index))
   }
 
-  const updateRow = (index: number, field: 'model' | 'input' | 'output', value: any) => {
+  const updateRow = (index: number, field: 'model' | 'input' | 'output', value: string | number) => {
     const newRows = [...pricingRows]
-    newRows[index][field] = value
+    ;(newRows[index] as any)[field] = value
     setPricingRows(newRows)
   }
 
+  const filteredRows = pricingRows
+    .map((row, index) => ({ ...row, _i: index }))
+    .filter((row) => row.model.toLowerCase().includes(searchQuery.toLowerCase()))
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">定价管理</h1>
+    <PageContainer
+      title="定价管理"
+      description="配置模型使用成本倍率"
+      actions={
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+            <RefreshCw className={cn("h-4 w-4", isFetching && "animate-spin")} />
+          </Button>
+          <Button variant="outline" size="sm" onClick={toggleEditMode}>
+            {editMode === 'table' ? <FileJson className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
+            <span className="hidden sm:inline ml-1">{editMode === 'table' ? 'JSON' : '表格'}</span>
+          </Button>
+          <Button size="sm" onClick={handleSave} disabled={saveMutation.isPending}>
+            <Check className="h-4 w-4 mr-1" />
+            保存
+          </Button>
+        </div>
+      }
+    >
+      {/* Info */}
+      <div className="mb-4 px-4 py-3 rounded-lg bg-muted/50 text-sm text-muted-foreground flex items-start gap-2.5">
+        <Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
+        <span>
+          基础配额单位：<span className="font-mono text-foreground">1M tokens = $1.00</span>。
+          倍率表示相对成本，如输入倍率 30 = 每百万 token 消耗 $30 配额。
+        </span>
       </div>
 
-      <Card>
-        <CardHeader>
-          <div className="flex justify-end gap-2">
-            <Button variant="secondary" onClick={toggleEditMode}>
-              {editMode === 'table' ? <FileJson className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
-              {editMode === 'table' ? '切换到JSON模式' : '切换到表格模式'}
-            </Button>
-            {editMode === 'table' && (
-              <Button variant="secondary" onClick={addRow}>
-                <Plus className="h-4 w-4" />
-                添加模型
-              </Button>
-            )}
-            <Button onClick={handleSave}>更新定价</Button>
-            <Button variant="secondary" onClick={() => refetch()}>
-              <RefreshCw className="h-4 w-4" />
-              刷新
+      {editMode === 'table' ? (
+        isLoading ? (
+          <div className="flex items-center justify-center py-20">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              <span className="text-sm text-muted-foreground">加载中...</span>
+            </div>
+          </div>
+        ) : pricingRows.length === 0 ? (
+          <div className="rounded-xl border border-dashed flex flex-col items-center justify-center py-16">
+            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+              <DollarSign className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="font-semibold text-lg mb-1">暂无定价配置</h3>
+            <p className="text-muted-foreground text-sm mb-4">添加模型定价倍率</p>
+            <Button onClick={addRow}>
+              <Plus className="h-4 w-4 mr-1" />
+              添加模型
             </Button>
           </div>
-        </CardHeader>
-
-        <CardContent className="space-y-4">
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              <strong>定价说明：</strong>
-              基础配额单位：1百万token = $1.00 | 定价配置为不同模型相对于基础单位的倍率 |
-              例如：gpt-4的input倍率为30，表示1百万token消耗30美元配额
-            </AlertDescription>
-          </Alert>
-
-          {editMode === 'table' ? (
-            isLoading ? (
-              <div className="text-center py-8 text-muted-foreground">加载中...</div>
-            ) : pricingRows.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                暂无定价配置，点击"添加模型"按钮添加
+        ) : (
+          <div className="space-y-3">
+            {/* Search */}
+            {pricingRows.length > 5 && (
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="搜索模型..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
               </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>模型名称</TableHead>
-                    <TableHead>输入倍率</TableHead>
-                    <TableHead>输出倍率</TableHead>
-                    <TableHead className="w-20">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pricingRows.map((row, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <Input
-                          value={row.model}
-                          onChange={(e) => updateRow(index, 'model', e.target.value)}
-                          placeholder="例如: gpt-4"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={row.input}
-                          onChange={(e) =>
-                            updateRow(index, 'input', parseFloat(e.target.value) || 0)
-                          }
-                          step="0.000001"
-                          min="0"
-                          placeholder="0.001"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="number"
-                          value={row.output}
-                          onChange={(e) =>
-                            updateRow(index, 'output', parseFloat(e.target.value) || 0)
-                          }
-                          step="0.000001"
-                          min="0"
-                          placeholder="0.002"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => removeRow(index)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="jsonValue">定价配置 (JSON)</Label>
-              <Textarea
-                id="jsonValue"
-                value={jsonValue}
-                onChange={(e) => setJsonValue(e.target.value)}
-                rows={20}
-                className="font-mono text-sm"
-                placeholder='{"gpt-3.5-turbo": {"input": 0.001, "output": 0.002}, "gpt-4": {"input": 0.03, "output": 0.06}}'
-              />
-              <p className="text-sm text-muted-foreground">
-                配置格式：模型名称 -&gt; {'{'}input: 输入倍率, output: 输出倍率{'}'}
-                。倍率基于1百万token=$1.00计算
-              </p>
+            )}
+
+            {/* Table */}
+            <div className="rounded-xl border bg-card overflow-hidden">
+              {/* Header */}
+              <div className="grid gap-2 px-4 py-2.5 border-b bg-muted/30" style={{ gridTemplateColumns: '2fr 1fr 1fr 40px' }}>
+                <span className="text-xs font-medium text-muted-foreground">模型名称</span>
+                <span className="text-xs font-medium text-muted-foreground">输入倍率</span>
+                <span className="text-xs font-medium text-muted-foreground">输出倍率</span>
+                <span />
+              </div>
+
+              {/* Rows */}
+              <div className="divide-y">
+                {filteredRows.map((row) => (
+                  <div key={row._i} className="grid gap-2 px-4 py-2 items-center hover:bg-muted/20 transition-colors" style={{ gridTemplateColumns: '2fr 1fr 1fr 40px' }}>
+                    <Input
+                      value={row.model}
+                      onChange={(e) => updateRow(row._i, 'model', e.target.value)}
+                      placeholder="模型名称"
+                      className="font-mono text-sm h-8"
+                    />
+                    <Input
+                      type="number"
+                      value={row.input}
+                      onChange={(e) => updateRow(row._i, 'input', parseFloat(e.target.value) || 0)}
+                      step="0.001"
+                      min="0"
+                      className="font-mono text-sm h-8"
+                    />
+                    <Input
+                      type="number"
+                      value={row.output}
+                      onChange={(e) => updateRow(row._i, 'output', parseFloat(e.target.value) || 0)}
+                      step="0.001"
+                      min="0"
+                      className="font-mono text-sm h-8"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                      onClick={() => removeRow(row._i)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+
+              {filteredRows.length === 0 && searchQuery && (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  没有匹配的模型
+                </div>
+              )}
             </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
+
+            {/* Add */}
+            <button
+              type="button"
+              onClick={addRow}
+              className="w-full py-2.5 border border-dashed rounded-lg text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors flex items-center justify-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              添加模型
+            </button>
+          </div>
+        )
+      ) : (
+        <div className="rounded-xl border bg-card p-4">
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">JSON 配置</Label>
+            <Textarea
+              value={jsonValue}
+              onChange={(e) => setJsonValue(e.target.value)}
+              rows={20}
+              className="font-mono text-sm"
+              placeholder='{"gpt-4": {"input": 30, "output": 60}, ...}'
+            />
+            <p className="text-xs text-muted-foreground">
+              格式：模型名称 → {"{"} input: 输入倍率, output: 输出倍率 {"}"}
+            </p>
+          </div>
+        </div>
+      )}
+    </PageContainer>
   )
 }

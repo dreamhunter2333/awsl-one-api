@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/use-toast'
 import { apiClient } from '@/api/client'
 import { Send } from 'lucide-react'
+import { PageContainer } from '@/components/ui/page-container'
 
 const requestTemplates: Record<string, any> = {
   '/v1/chat/completions': {
@@ -103,11 +104,7 @@ export function ApiTest() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">API 测试</h1>
-      </div>
-
+    <PageContainer title="API 测试">
       <Card>
         <CardHeader>
           <CardTitle>API 测试工具</CardTitle>
@@ -115,7 +112,7 @@ export function ApiTest() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="endpoint">API 端点</Label>
                 <Select
@@ -156,7 +153,7 @@ export function ApiTest() {
               <p className="text-sm text-muted-foreground">直接编辑 JSON 格式的请求体</p>
             </div>
 
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
               <Send className="h-4 w-4" />
               {isLoading ? '发送中...' : '发送请求'}
             </Button>
@@ -164,7 +161,7 @@ export function ApiTest() {
 
           {response && (
             <div className="mt-6 space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <h3 className="font-semibold">响应结果</h3>
                 <div className="flex gap-2">
                   <Badge variant={statusCode === 200 ? 'success' : 'destructive'}>
@@ -174,7 +171,7 @@ export function ApiTest() {
                 </div>
               </div>
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="p-4">
                   <pre className="whitespace-pre-wrap break-words text-sm font-mono max-h-96 overflow-y-auto">
                     {JSON.stringify(response, null, 2)}
                   </pre>
@@ -184,6 +181,6 @@ export function ApiTest() {
           )}
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   )
 }

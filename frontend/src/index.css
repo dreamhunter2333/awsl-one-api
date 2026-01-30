@@ -1,77 +1,140 @@
 @import 'tailwindcss';
 
 @theme {
-  /* 现代简洁配色 - 粉色主题 */
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(240 10% 4%);
+  /* 现代科技简约配色 - 深邃蓝主题 */
+  --color-background: hsl(210 20% 98%);
+  --color-foreground: hsl(222 47% 11%);
   --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(240 10% 4%);
+  --color-card-foreground: hsl(222 47% 11%);
   --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(240 10% 4%);
+  --color-popover-foreground: hsl(222 47% 11%);
 
-  /* 主色调 - 浅粉色 */
-  --color-primary: hsl(350 89% 70%);
+  /* 主色调 - 靛蓝色 */
+  --color-primary: hsl(226 70% 55%);
   --color-primary-foreground: hsl(0 0% 100%);
 
-  /* 次要色 */
-  --color-secondary: hsl(240 5% 96%);
-  --color-secondary-foreground: hsl(240 6% 10%);
+  /* 次要色 - 柔和灰蓝 */
+  --color-secondary: hsl(220 14% 96%);
+  --color-secondary-foreground: hsl(222 47% 11%);
 
   /* 静音色 */
-  --color-muted: hsl(240 5% 96%);
-  --color-muted-foreground: hsl(240 4% 46%);
+  --color-muted: hsl(220 14% 96%);
+  --color-muted-foreground: hsl(220 9% 46%);
 
-  /* 强调色 - 淡粉 */
-  --color-accent: hsl(350 89% 95%);
-  --color-accent-foreground: hsl(350 70% 45%);
+  /* 强调色 */
+  --color-accent: hsl(220 14% 96%);
+  --color-accent-foreground: hsl(222 47% 11%);
 
-  /* 危险色 */
-  --color-destructive: hsl(0 84% 60%);
+  /* 危险色 - 柔和红 */
+  --color-destructive: hsl(0 72% 51%);
   --color-destructive-foreground: hsl(0 0% 100%);
 
-  /* 边框和输入框 */
-  --color-border: hsl(240 6% 90%);
-  --color-input: hsl(240 6% 90%);
-  --color-ring: hsl(350 89% 70%);
+  /* 成功色 - 翡翠绿 */
+  --color-success: hsl(160 84% 39%);
+  --color-success-foreground: hsl(0 0% 100%);
 
-  --radius: 0.5rem;
+  /* 警告色 - 琥珀黄 */
+  --color-warning: hsl(38 92% 50%);
+  --color-warning-foreground: hsl(0 0% 100%);
+
+  /* 信息色 - 天蓝 */
+  --color-info: hsl(199 89% 48%);
+  --color-info-foreground: hsl(0 0% 100%);
+
+  /* 边框和输入框 */
+  --color-border: hsl(220 13% 91%);
+  --color-input: hsl(220 13% 91%);
+  --color-ring: hsl(226 70% 55%);
+
+  /* 侧边栏专用色 */
+  --color-sidebar: hsl(222 47% 11%);
+  --color-sidebar-foreground: hsl(210 20% 98%);
+  --color-sidebar-muted: hsl(220 17% 17%);
+  --color-sidebar-accent: hsl(226 70% 55%);
+
+  --radius: 0.625rem;
 }
 
 .dark {
-  --color-background: hsl(240 10% 4%);
-  --color-foreground: hsl(0 0% 95%);
-  --color-card: hsl(240 10% 4%);
-  --color-card-foreground: hsl(0 0% 95%);
-  --color-popover: hsl(240 10% 4%);
-  --color-popover-foreground: hsl(0 0% 95%);
+  --color-background: hsl(222 47% 6%);
+  --color-foreground: hsl(210 20% 98%);
+  --color-card: hsl(222 47% 9%);
+  --color-card-foreground: hsl(210 20% 98%);
+  --color-popover: hsl(222 47% 9%);
+  --color-popover-foreground: hsl(210 20% 98%);
 
-  /* 主色调 - 深色模式下的浅粉色 */
-  --color-primary: hsl(350 89% 75%);
-  --color-primary-foreground: hsl(240 10% 4%);
+  /* 主色调 - 深色模式下的靛蓝 */
+  --color-primary: hsl(226 76% 60%);
+  --color-primary-foreground: hsl(0 0% 100%);
 
-  --color-secondary: hsl(240 4% 16%);
-  --color-secondary-foreground: hsl(0 0% 95%);
+  --color-secondary: hsl(222 30% 14%);
+  --color-secondary-foreground: hsl(210 20% 98%);
 
-  --color-muted: hsl(240 4% 16%);
-  --color-muted-foreground: hsl(240 5% 65%);
+  --color-muted: hsl(222 30% 14%);
+  --color-muted-foreground: hsl(220 9% 60%);
 
-  --color-accent: hsl(350 40% 18%);
-  --color-accent-foreground: hsl(350 89% 80%);
+  --color-accent: hsl(222 30% 14%);
+  --color-accent-foreground: hsl(210 20% 98%);
 
-  --color-destructive: hsl(0 63% 50%);
-  --color-destructive-foreground: hsl(0 0% 95%);
+  --color-destructive: hsl(0 62% 50%);
+  --color-destructive-foreground: hsl(0 0% 98%);
 
-  --color-border: hsl(240 4% 16%);
-  --color-input: hsl(240 4% 16%);
-  --color-ring: hsl(350 89% 75%);
+  /* 成功色 - 深色模式 */
+  --color-success: hsl(160 84% 35%);
+  --color-success-foreground: hsl(0 0% 98%);
+
+  /* 警告色 - 深色模式 */
+  --color-warning: hsl(38 92% 45%);
+  --color-warning-foreground: hsl(0 0% 98%);
+
+  /* 信息色 - 深色模式 */
+  --color-info: hsl(199 89% 42%);
+  --color-info-foreground: hsl(0 0% 98%);
+
+  --color-border: hsl(222 30% 18%);
+  --color-input: hsl(222 30% 18%);
+  --color-ring: hsl(226 76% 60%);
+
+  /* 侧边栏专用色 - 深色模式 */
+  --color-sidebar: hsl(222 47% 8%);
+  --color-sidebar-foreground: hsl(210 20% 98%);
+  --color-sidebar-muted: hsl(222 30% 12%);
+  --color-sidebar-accent: hsl(226 76% 60%);
 }
 
 @layer base {
   * {
     @apply border-border;
   }
+
+  html {
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  a,
+  button,
+  [role='button'],
+  label {
+    cursor: pointer;
+  }
+
+  a:active,
+  button:active,
+  [role='button']:active {
+    opacity: 0.85;
+  }
+
+  /* 优化标题字重 */
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    letter-spacing: -0.02em;
   }
 }
 
@@ -79,6 +142,7 @@
 @layer utilities {
   .scrollbar-thin {
     scrollbar-width: thin;
+    scrollbar-color: hsl(220 9% 46% / 0.3) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -91,11 +155,89 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(240 4% 46% / 0.3);
+    background: hsl(220 9% 46% / 0.3);
     border-radius: 3px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: hsl(240 4% 46% / 0.5);
+    background: hsl(220 9% 46% / 0.5);
+  }
+
+  /* 玻璃效果 */
+  .glass {
+    backdrop-filter: blur(12px) saturate(180%);
+    background: hsl(0 0% 100% / 0.8);
+  }
+
+  .dark .glass {
+    background: hsl(222 47% 9% / 0.8);
+  }
+
+  /* 渐变边框效果 */
+  .gradient-border {
+    position: relative;
+  }
+
+  .gradient-border::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, hsl(226 70% 55% / 0.3), hsl(160 84% 39% / 0.3));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* 柔和阴影 */
+  .shadow-soft {
+    box-shadow:
+      0 1px 2px hsl(220 9% 46% / 0.04),
+      0 4px 8px hsl(220 9% 46% / 0.04),
+      0 8px 16px hsl(220 9% 46% / 0.04);
+  }
+
+  .dark .shadow-soft {
+    box-shadow:
+      0 1px 2px hsl(0 0% 0% / 0.2),
+      0 4px 8px hsl(0 0% 0% / 0.2),
+      0 8px 16px hsl(0 0% 0% / 0.2);
+  }
+
+  /* 动画效果 */
+  .animate-in {
+    animation: animate-in 0.2s ease-out;
+  }
+
+  @keyframes animate-in {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* 悬停提升效果 */
+  .hover-lift {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 4px 12px hsl(220 9% 46% / 0.1),
+      0 8px 24px hsl(220 9% 46% / 0.1);
+  }
+
+  .dark .hover-lift:hover {
+    box-shadow:
+      0 4px 12px hsl(0 0% 0% / 0.3),
+      0 8px 24px hsl(0 0% 0% / 0.3);
   }
 }

@@ -16,9 +16,9 @@ const Alert = React.forwardRef<
         "bg-background text-foreground": variant === "default",
         "border-destructive/50 text-destructive dark:border-destructive [&>svg]:text-destructive":
           variant === "destructive",
-        "border-orange-200/50 bg-transparent text-orange-400 dark:border-amber-700 dark:bg-amber-950/50 dark:text-amber-300 [&>svg]:text-orange-300":
+        "border-warning/50 bg-warning/10 text-warning dark:border-warning/50 dark:bg-warning/10 dark:text-warning [&>svg]:text-warning":
           variant === "warning",
-        "border-green-300 bg-green-50 text-green-800 dark:border-green-600 dark:bg-green-950 dark:text-green-200 [&>svg]:text-green-600":
+        "border-success/50 bg-success/10 text-success dark:border-success/50 dark:bg-success/10 dark:text-success [&>svg]:text-success":
           variant === "success",
       },
       className
