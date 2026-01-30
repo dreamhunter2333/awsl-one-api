@@ -130,22 +130,16 @@ export default {
         requestBody: any,
         saveUsage: (usage: Usage) => Promise<void>,
     ): Promise<Response> {
-        const reqJson = requestBody
-        const { model: modelName, stream } = reqJson
+        const { stream } = requestBody
 
-        const deploymentName = config.deployment_mapper[modelName]
-        if (!deploymentName) {
-            throw new Error(`Model ${modelName} not supported`)
-        }
+        // model 已在上层完成映射
 
-        reqJson.model = deploymentName
-
-        const proxyRequest = buildProxyRequest(c.req.raw, reqJson, config)
+        const proxyRequest = buildProxyRequest(c.req.raw, requestBody, config)
         const response = await fetch(proxyRequest)
 
         if (stream) {
             const [streamForClient, streamForServer] = response.body?.tee() || []
-            c.executionCtx.waitUntil(handleStreamResponse(c, streamForServer, reqJson, saveUsage))
+            c.executionCtx.waitUntil(handleStreamResponse(c, streamForServer, requestBody, saveUsage))
             return new Response(streamForClient, {
                 headers: response.headers,
                 status: response.status,

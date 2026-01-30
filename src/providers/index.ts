@@ -4,9 +4,10 @@ import { contentJson, fromHono, OpenAPIRoute } from 'chanfana';
 import azureOpenaiProxy from "./azure-openai-proxy"
 import openaiProxy from "./openai-proxy"
 import claudeProxy from "./claude-proxy"
+import claudeToOpenaiProxy from "./claude-to-openai-proxy"
 import openaiResponsesProxy from "./openai-responses-proxy"
 import azureOpenaiResponsesProxy from "./azure-openai-responses-proxy"
-import utils from "../utils"
+import utils, { findDeploymentMapping } from "../utils"
 import { TokenUtils } from "../admin/token_utils"
 import { CONSTANTS } from "../constants"
 import { z } from "zod";
@@ -25,6 +26,7 @@ const providerMap: Record<
     "azure-openai": azureOpenaiProxy.fetch,
     "openai": openaiProxy.fetch,
     "claude": claudeProxy.fetch,
+    "claude-to-openai": claudeToOpenaiProxy.fetch,
     "openai-responses": openaiResponsesProxy.fetch,
     "azure-openai-responses": azureOpenaiResponsesProxy.fetch,
 };
@@ -130,16 +132,18 @@ class ProxyEndpoint extends OpenAPIRoute {
         }
 
         // Filter channels that support the requested model
-        const availableChannels: Array<{ key: string, config: ChannelConfig }> = [];
+        const availableChannels: Array<{ key: string, config: ChannelConfig, mapping: { pattern: string, deployment: string } }> = [];
 
         for (const row of channelsResult.results) {
             const config = JSON.parse(row.value) as ChannelConfig;
 
             // Check if channel supports the model (has deployment mapping for it)
-            if (config.deployment_mapper && config.deployment_mapper[model]) {
+            const mapping = findDeploymentMapping(config.deployment_mapper, model);
+            if (mapping) {
                 availableChannels.push({
                     key: row.key,
-                    config: config
+                    config: config,
+                    mapping: mapping
                 });
             }
         }
@@ -156,6 +160,9 @@ class ProxyEndpoint extends OpenAPIRoute {
         const selectedChannel = availableChannels[randomIndex];
         const targetChannelKey = selectedChannel.key;
         const targetChannelConfig = selectedChannel.config;
+
+        // 统一在上层完成模型名映射
+        requestBody.model = selectedChannel.mapping.deployment;
 
         if (!targetChannelConfig.type) {
             return c.text("Channel type invalid", 400);
@@ -235,7 +242,7 @@ class ResponsesProxyEndpoint extends OpenAPIRoute {
         }
 
         const allowedTypes: ChannelType[] = ["openai-responses", "azure-openai-responses"];
-        const availableChannels: Array<{ key: string, config: ChannelConfig }> = [];
+        const availableChannels: Array<{ key: string, config: ChannelConfig, mapping: { pattern: string, deployment: string } }> = [];
 
         for (const row of channelsResult.results) {
             const config = JSON.parse(row.value) as ChannelConfig;
@@ -244,10 +251,12 @@ class ResponsesProxyEndpoint extends OpenAPIRoute {
                 continue;
             }
 
-            if (config.deployment_mapper && config.deployment_mapper[model]) {
+            const mapping = findDeploymentMapping(config.deployment_mapper, model);
+            if (mapping) {
                 availableChannels.push({
                     key: row.key,
-                    config: config
+                    config: config,
+                    mapping: mapping
                 });
             }
         }
@@ -263,6 +272,9 @@ class ResponsesProxyEndpoint extends OpenAPIRoute {
         const selectedChannel = availableChannels[randomIndex];
         const targetChannelKey = selectedChannel.key;
         const targetChannelConfig = selectedChannel.config;
+
+        // 统一在上层完成模型名映射
+        requestBody.model = selectedChannel.mapping.deployment;
 
         const proxyFetch = providerMap[targetChannelConfig.type || ""];
         if (!proxyFetch) {

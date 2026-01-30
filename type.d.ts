@@ -36,6 +36,7 @@ type ChannelType =
     | "azure-openai"
     | "openai"
     | "claude"
+    | "claude-to-openai"
     | "openai-responses"
     | "azure-openai-responses"
     | undefined

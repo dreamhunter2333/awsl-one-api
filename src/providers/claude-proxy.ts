@@ -264,24 +264,15 @@ export default {
         requestBody: any,
         saveUsage: (usage: Usage) => Promise<void>,
     ): Promise<Response> {
-        // Parse request body
-        const reqJson = requestBody
-        const { model: modelName, stream } = reqJson;
+        const { stream } = requestBody;
 
-        // Validate model support
-        const deploymentName = config.deployment_mapper[modelName]
-        if (!deploymentName) {
-            throw new Error(`Model ${modelName} not supported`)
-        }
-
-        // Map model name
-        reqJson.model = deploymentName
+        // model 已在上层完成映射
 
         // Note: Unlike OpenAI, Claude's non-streaming response already includes usage data,
         // so we don't need to force stream=true for usage tracking
 
         // Build and send proxy request
-        const proxyRequest = buildProxyRequest(c.req.raw, reqJson, config)
+        const proxyRequest = buildProxyRequest(c.req.raw, requestBody, config)
         const response = await fetch(proxyRequest)
 
         // Handle streaming response

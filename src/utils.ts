@@ -61,9 +61,57 @@ export const saveSetting = async (
     return true;
 }
 
+/**
+ * 通配符匹配函数
+ * 支持 * 匹配任意字符
+ * 例如: "claude-*" 匹配 "claude-opus-4", "*claude*" 匹配 "my-claude-model"
+ */
+export const wildcardMatch = (pattern: string, str: string): boolean => {
+    // 精确匹配优先
+    if (pattern === str) return true;
+    // 没有通配符则不匹配
+    if (!pattern.includes('*')) return false;
+
+    // 将通配符模式转换为正则表达式
+    const regexPattern = pattern
+        .split('*')
+        .map(s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+        .join('.*');
+    const regex = new RegExp(`^${regexPattern}$`, 'i');
+    return regex.test(str);
+}
+
+/**
+ * 从 deployment_mapper 中查找匹配的部署名称
+ * 支持精确匹配和通配符匹配
+ * 返回 { pattern, deployment } 或 null
+ */
+export const findDeploymentMapping = (
+    deploymentMapper: Record<string, string> | undefined,
+    model: string
+): { pattern: string; deployment: string } | null => {
+    if (!deploymentMapper) return null;
+
+    // 1. 精确匹配优先
+    if (deploymentMapper[model]) {
+        return { pattern: model, deployment: deploymentMapper[model] };
+    }
+
+    // 2. 通配符匹配
+    for (const pattern of Object.keys(deploymentMapper)) {
+        if (pattern.includes('*') && wildcardMatch(pattern, model)) {
+            return { pattern, deployment: deploymentMapper[pattern] };
+        }
+    }
+
+    return null;
+}
+
 export default {
     getJsonObjectValue,
     getJsonSetting,
     getSetting,
     saveSetting,
+    wildcardMatch,
+    findDeploymentMapping,
 }

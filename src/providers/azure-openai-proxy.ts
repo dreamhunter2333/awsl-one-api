@@ -115,25 +115,19 @@ export default {
         requestBody: any,
         saveUsage: (usage: Usage) => Promise<void>,
     ): Promise<Response> {
-        // 准备请求数据
-        const reqJson = requestBody
+        // model 已在上层完成映射，直接作为 deploymentName 使用
+        const { model: deploymentName, stream } = requestBody;
+
         // 强制包含使用数据
-        const { model: modelName, stream } = reqJson;
         if (stream) {
-            reqJson.stream_options = {
-                ...(reqJson.stream_options || {}),
+            requestBody.stream_options = {
+                ...(requestBody.stream_options || {}),
                 include_usage: true,
             }
         }
 
-        // 获取部署名称
-        const deploymentName = config.deployment_mapper[modelName]
-        if (!deploymentName) {
-            throw new Error(`Model ${modelName} not supported`)
-        }
-
         // 构建目标请求
-        const proxyRequest = buildProxyRequest(c.req.raw, reqJson, config, deploymentName)
+        const proxyRequest = buildProxyRequest(c.req.raw, requestBody, config, deploymentName)
 
         // 发送请求并获取响应
         const response = await fetch(proxyRequest)

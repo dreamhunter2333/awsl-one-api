@@ -103,28 +103,20 @@ export default {
         requestBody: any,
         saveUsage: (usage: Usage) => Promise<void>,
     ): Promise<Response> {
-        // 准备请求数据
-        const reqJson = requestBody
+        const { stream } = requestBody;
+
         // 强制包含使用数据
-        const { model: modelName, stream } = reqJson;
         if (stream) {
-            reqJson.stream_options = {
-                ...(reqJson.stream_options || {}),
+            requestBody.stream_options = {
+                ...(requestBody.stream_options || {}),
                 include_usage: true,
             }
         }
 
-        // 检查模型是否受支持
-        const deploymentName = config.deployment_mapper[modelName]
-        if (!deploymentName) {
-            throw new Error(`Model ${modelName} not supported`)
-        }
-
-        // 替换模型名称为映射后的名称
-        reqJson.model = deploymentName
+        // model 已在上层完成映射
 
         // 构建目标请求
-        const proxyRequest = buildProxyRequest(c.req.raw, reqJson, config)
+        const proxyRequest = buildProxyRequest(c.req.raw, requestBody, config)
 
         // 发送请求并获取响应
         const response = await fetch(proxyRequest)

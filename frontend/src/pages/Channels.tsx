@@ -34,6 +34,7 @@ const channelTypes = [
   { value: 'azure-openai', label: 'Azure OpenAI' },
   { value: 'openai', label: 'OpenAI' },
   { value: 'claude', label: 'Claude' },
+  { value: 'claude-to-openai', label: 'Claude → OpenAI' },
   { value: 'openai-responses', label: 'OpenAI Responses' },
   { value: 'azure-openai-responses', label: 'Azure OpenAI Responses' },
 ]

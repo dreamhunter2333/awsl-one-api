@@ -6,7 +6,7 @@ export interface Channel {
 
 export interface ChannelConfig {
   name: string
-  type: 'openai' | 'azure-openai' | 'claude' | 'openai-responses' | 'azure-openai-responses'
+  type: 'openai' | 'azure-openai' | 'claude' | 'claude-to-openai' | 'openai-responses' | 'azure-openai-responses'
   endpoint: string
   api_key: string
   api_version?: string
