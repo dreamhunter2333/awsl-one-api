@@ -176,7 +176,8 @@ class ProxyEndpoint extends OpenAPIRoute {
         return proxyFetch(c, targetChannelConfig, requestBody,
             async (usage: Usage) => {
                 try {
-                    await TokenUtils.processUsage(c, apiKey, model, targetChannelKey, targetChannelConfig, usage);
+                    // 使用转换后的模型名计费
+                    await TokenUtils.processUsage(c, apiKey, requestBody.model, targetChannelKey, targetChannelConfig, usage);
                 } catch (error) {
                     console.error('Error processing usage:', error);
                 }
@@ -284,7 +285,8 @@ class ResponsesProxyEndpoint extends OpenAPIRoute {
         return proxyFetch(c, targetChannelConfig, requestBody,
             async (usage: Usage) => {
                 try {
-                    await TokenUtils.processUsage(c, apiKey, model, targetChannelKey, targetChannelConfig, usage);
+                    // 使用转换后的模型名计费
+                    await TokenUtils.processUsage(c, apiKey, requestBody.model, targetChannelKey, targetChannelConfig, usage);
                 } catch (error) {
                     console.error('Error processing usage:', error);
                 }
