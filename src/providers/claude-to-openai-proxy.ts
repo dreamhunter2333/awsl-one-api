@@ -182,7 +182,10 @@ const convertClaudeToOpenAIRequest = (reqJson: any): any => {
                 }
             }
 
-            messages.push(openaiMsg);
+            // 只有当消息有实际内容时才添加（避免空 user 消息）
+            if (openaiMsg.content != null || openaiMsg.tool_calls) {
+                messages.push(openaiMsg);
+            }
         }
     }
 
