@@ -48,6 +48,35 @@ const fetchChannelsForToken = async (
     ).bind(...channelKeys).all<ChannelConfigRow>();
 }
 
+const fetchAllChannels = async (c: Context<HonoCustomType>) => {
+    return await c.env.DB.prepare(
+        `SELECT key, value FROM channel_config`
+    ).all<ChannelConfigRow>();
+}
+
+const fetchChannelsForRequest = async (
+    c: Context<HonoCustomType>,
+    apiKey: string | null
+) => {
+    if (!apiKey) {
+        return {
+            channelsResult: await fetchAllChannels(c),
+        };
+    }
+
+    const tokenInfo = await fetchTokenData(c, apiKey);
+    if (!tokenInfo) {
+        return {
+            errorResponse: c.text("Invalid API key", 401),
+        };
+    }
+
+    const { tokenData } = tokenInfo;
+    return {
+        channelsResult: await fetchChannelsForToken(c, tokenData),
+    };
+}
+
 export class ModelsEndpoint extends OpenAPIRoute {
     schema = {
         tags: ['OpenAI Proxy'],
@@ -80,20 +109,13 @@ export class ModelsEndpoint extends OpenAPIRoute {
 
     async handle(c: Context<HonoCustomType>) {
         const apiKey = getApiKeyFromHeaders(c);
-        if (!apiKey) {
-            return c.text("Authorization header or x-api-key not found", 401);
+        const { channelsResult, errorResponse } = await fetchChannelsForRequest(c, apiKey);
+
+        if (errorResponse) {
+            return errorResponse;
         }
 
-        const tokenInfo = await fetchTokenData(c, apiKey);
-        if (!tokenInfo) {
-            return c.text("Invalid API key", 401);
-        }
-
-        const { tokenData } = tokenInfo;
-
-        const channelsResult = await fetchChannelsForToken(c, tokenData);
-
-        if (!channelsResult.results || channelsResult.results.length === 0) {
+        if (!channelsResult || !channelsResult.results || channelsResult.results.length === 0) {
             return c.json({
                 object: "list",
                 data: [],
