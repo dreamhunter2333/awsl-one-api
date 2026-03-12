@@ -1,7 +1,7 @@
 import { Context } from "hono";
 
 import { CONSTANTS } from "../constants";
-import utils from "../utils";
+import { getJsonSetting } from "../utils";
 
 // Token 工具对象
 export const TokenUtils = {
@@ -24,7 +24,7 @@ export const TokenUtils = {
         }
 
         // Fallback to global pricing
-        const globalPricingMap = await utils.getJsonSetting(c, CONSTANTS.MODEL_PRICING_KEY);
+        const globalPricingMap = await getJsonSetting(c, CONSTANTS.MODEL_PRICING_KEY);
         return globalPricingMap?.[model] || null;
     },
 

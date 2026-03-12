@@ -106,12 +106,3 @@ export const findDeploymentMapping = (
 
     return null;
 }
-
-export default {
-    getJsonObjectValue,
-    getJsonSetting,
-    getSetting,
-    saveSetting,
-    wildcardMatch,
-    findDeploymentMapping,
-}

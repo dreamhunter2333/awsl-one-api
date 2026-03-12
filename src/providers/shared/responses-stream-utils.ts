@@ -95,4 +95,25 @@ export const handleStreamResponse = async (
     }
 }
 
+export const checkoutResponsesUsageData = async (
+    saveUsage: (usage: Usage) => Promise<void>,
+    response: Response,
+    requestBody: any,
+): Promise<void> => {
+    try {
+        const resJson = await response.clone().json<OpenAIResponsesResponse>()
+        const usage = extractUsageFromResponse(resJson)
+        if (usage) {
+            await saveUsage(usage)
+        } else {
+            const estimatedUsage = estimateUsageFromBodies(requestBody, resJson)
+            if (estimatedUsage) {
+                await saveUsage(estimatedUsage)
+            }
+        }
+    } catch (error) {
+        console.error("Error parsing response JSON for usage:", error)
+    }
+}
+
 export { OpenAIResponsesResponse, extractUsageFromResponse, estimateUsageFromBodies }

@@ -1,9 +1,7 @@
 import { Context } from "hono"
 import {
     handleStreamResponse,
-    OpenAIResponsesResponse,
-    extractUsageFromResponse,
-    estimateUsageFromBodies,
+    checkoutResponsesUsageData,
 } from "./shared/responses-stream-utils"
 
 const buildProxyRequest = (
@@ -58,20 +56,7 @@ export default {
         }
 
         if (response.ok) {
-            try {
-                const resJson = await response.clone().json<OpenAIResponsesResponse>()
-                const usage = extractUsageFromResponse(resJson)
-                if (usage) {
-                    await saveUsage(usage)
-                } else {
-                    const estimatedUsage = estimateUsageFromBodies(requestBody, resJson)
-                    if (estimatedUsage) {
-                        await saveUsage(estimatedUsage)
-                    }
-                }
-            } catch (error) {
-                console.error("Error parsing response JSON for usage:", error)
-            }
+            await checkoutResponsesUsageData(saveUsage, response, requestBody)
         }
 
         return response

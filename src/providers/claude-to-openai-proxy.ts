@@ -1,12 +1,5 @@
 import { Context } from "hono"
-
-type OpenAIUsageLike = {
-    prompt_tokens?: number;
-    completion_tokens?: number;
-    total_tokens?: number;
-    input_tokens?: number;
-    output_tokens?: number;
-}
+import { normalizeUsage as normalizeResponsesUsage } from "./shared/usage-utils"
 
 type OpenAIStreamChoice = {
     index?: number;
@@ -30,7 +23,13 @@ type OpenAIStreamChunk = {
     id?: string;
     model?: string;
     choices?: OpenAIStreamChoice[];
-    usage?: OpenAIUsageLike;
+    usage?: {
+        prompt_tokens?: number;
+        completion_tokens?: number;
+        total_tokens?: number;
+        input_tokens?: number;
+        output_tokens?: number;
+    };
 }
 
 const mapFinishReasonToClaude = (finishReason?: string | null): string | null => {
@@ -261,23 +260,6 @@ const convertOpenAIResponseToClaude = (resJson: any): any => {
     };
 }
 
-const normalizeUsage = (raw?: OpenAIUsageLike): Usage | null => {
-    if (!raw) return null;
-    const promptTokens = raw.prompt_tokens ?? raw.input_tokens;
-    const completionTokens = raw.completion_tokens ?? raw.output_tokens;
-    const totalTokens = raw.total_tokens ?? (
-        (promptTokens ?? 0) + (completionTokens ?? 0)
-    );
-    if (promptTokens == null && completionTokens == null && totalTokens == null) {
-        return null;
-    }
-    return {
-        prompt_tokens: promptTokens,
-        completion_tokens: completionTokens,
-        total_tokens: totalTokens,
-    };
-}
-
 const createClaudeStreamTransformer = (
     saveUsage: (usage: Usage) => Promise<void>
 ): TransformStream<Uint8Array, Uint8Array> => {
@@ -441,7 +423,7 @@ const createClaudeStreamTransformer = (
         if (!chunkJson) return;
 
         if (chunkJson.usage) {
-            const normalized = normalizeUsage(chunkJson.usage);
+            const normalized = normalizeResponsesUsage(chunkJson.usage);
             if (normalized) {
                 usageToSave = normalized;
                 outputTokens = normalized.completion_tokens ?? outputTokens;
@@ -583,7 +565,7 @@ export default {
         if (response.ok) {
             try {
                 const resJson = await response.clone().json<OpenAIResponse & Record<string, any>>();
-                const usage = normalizeUsage(resJson?.usage);
+                const usage = normalizeResponsesUsage(resJson?.usage);
                 if (usage) {
                     await saveUsage(usage);
                 }

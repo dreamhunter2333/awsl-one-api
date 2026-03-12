@@ -1,6 +1,6 @@
 import { Context } from "hono";
 import { CONSTANTS } from "../constants";
-import utils from "../utils";
+import { getSetting, saveSetting } from "../utils";
 
 const DB_INIT_QUERIES = `
 CREATE TABLE IF NOT EXISTS channel_config (
@@ -34,23 +34,23 @@ const dbOperations = {
             .join(";\n");
         await c.env.DB.exec(query);
 
-        const version = await utils.getSetting(c, CONSTANTS.DB_VERSION_KEY);
+        const version = await getSetting(c, CONSTANTS.DB_VERSION_KEY);
         if (version) {
             return c.json({ message: "Database already initialized" });
         }
-        await utils.saveSetting(c, CONSTANTS.DB_VERSION_KEY, CONSTANTS.DB_VERSION);
+        await saveSetting(c, CONSTANTS.DB_VERSION_KEY, CONSTANTS.DB_VERSION);
     },
     migrate: async (c: Context<HonoCustomType>) => {
-        const version = await utils.getSetting(c, CONSTANTS.DB_VERSION_KEY);
+        const version = await getSetting(c, CONSTANTS.DB_VERSION_KEY);
         if (version != CONSTANTS.DB_VERSION) {
             // TODO: Perform migration logic here
 
             // Update the version in the settings table
-            await utils.saveSetting(c, CONSTANTS.DB_VERSION_KEY, CONSTANTS.DB_VERSION);
+            await saveSetting(c, CONSTANTS.DB_VERSION_KEY, CONSTANTS.DB_VERSION);
         }
     },
     getVersion: async (c: Context<HonoCustomType>): Promise<string | null> => {
-        return await utils.getSetting(c, CONSTANTS.DB_VERSION_KEY);
+        return await getSetting(c, CONSTANTS.DB_VERSION_KEY);
     }
 }
 

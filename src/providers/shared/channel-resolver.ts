@@ -53,7 +53,11 @@ export const resolveChannel = async (
     const availableChannels: Array<{ key: string, config: ChannelConfig, mapping: { pattern: string, deployment: string } }> = [];
 
     for (const row of channelsResult.results) {
-        const config = JSON.parse(row.value) as ChannelConfig;
+        const config = (() => { try { return JSON.parse(row.value) as ChannelConfig; } catch { return null; } })();
+        if (!config) {
+            console.error(`Invalid channel config for key: ${row.key}`);
+            continue;
+        }
 
         if (allowedTypes && (!config.type || !allowedTypes.includes(config.type))) {
             continue;
