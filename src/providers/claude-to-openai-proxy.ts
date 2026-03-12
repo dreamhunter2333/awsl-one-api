@@ -582,7 +582,7 @@ export default {
 
         if (response.ok) {
             try {
-                const resJson = await response.clone().json();
+                const resJson = await response.clone().json<OpenAIResponse & Record<string, any>>();
                 const usage = normalizeUsage(resJson?.usage);
                 if (usage) {
                     await saveUsage(usage);
