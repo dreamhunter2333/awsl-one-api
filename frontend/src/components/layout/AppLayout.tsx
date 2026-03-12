@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/store/auth'
 import { useToast } from '@/components/ui/use-toast'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Menu, Sparkles } from 'lucide-react'
+import { Menu, Zap } from 'lucide-react'
 
 interface AppLayoutProps {
   children: ReactNode
@@ -56,23 +56,24 @@ export function AppLayout({ children }: AppLayoutProps) {
       />
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex items-center justify-between border-b bg-card/80 backdrop-blur-sm px-4 py-3 lg:hidden sticky top-0 z-30">
+        <header className="flex items-center justify-between border-b bg-card/80 glass px-4 py-2.5 lg:hidden sticky top-0 z-30">
           <Button
             type="button"
             variant="ghost"
             size="icon"
+            className="h-9 w-9"
             onClick={() => setIsMobileNavOpen(true)}
             aria-label="打开侧边栏"
           >
-            <Menu className="h-5 w-5" />
+            <Menu className="h-4 w-4" />
           </Button>
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-              <Sparkles className="h-4 w-4 text-white" />
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+              <Zap className="h-3.5 w-3.5 text-white" />
             </div>
-            <span className="font-semibold tracking-tight">Awsl One API</span>
+            <span className="font-semibold text-sm tracking-tight">Awsl One API</span>
           </div>
-          <div className="h-10 w-10" />
+          <div className="h-9 w-9" />
         </header>
 
         <main className="flex-1 overflow-y-auto bg-background">

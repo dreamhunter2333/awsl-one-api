@@ -10,6 +10,7 @@ import { Tokens } from './pages/Tokens'
 import { Pricing } from './pages/Pricing'
 import { ApiTest } from './pages/ApiTest'
 import { Database } from './pages/Database'
+import { NotFound } from './pages/NotFound'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -80,6 +81,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </AppLayout>
         <Toaster />

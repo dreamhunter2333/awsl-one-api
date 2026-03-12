@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -8,8 +8,9 @@ import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/use-toast'
 import { apiClient } from '@/api/client'
-import { Send } from 'lucide-react'
+import { Send, Clock, CheckCircle, XCircle, Copy } from 'lucide-react'
 import { PageContainer } from '@/components/ui/page-container'
+import { cn, copyToClipboard } from '@/lib/utils'
 
 const requestTemplates: Record<string, any> = {
   '/v1/chat/completions': {
@@ -63,19 +64,30 @@ export function ApiTest() {
     setRequestBody(JSON.stringify(requestTemplates[newEndpoint], null, 2))
   }
 
+  const handleCopyResponse = async () => {
+    if (response) {
+      try {
+        await copyToClipboard(JSON.stringify(response, null, 2))
+        addToast('已复制到剪贴板', 'success')
+      } catch {
+        addToast('复制失败', 'error')
+      }
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
     if (!apiToken) {
-      addToast('请输入API令牌', 'error')
+      addToast('请输入 API 令牌', 'error')
       return
     }
 
     let body: any
     try {
       body = JSON.parse(requestBody)
-    } catch (error) {
-      addToast('请求体JSON格式错误', 'error')
+    } catch {
+      addToast('请求体 JSON 格式错误', 'error')
       return
     }
 
@@ -91,32 +103,34 @@ export function ApiTest() {
       setResponseTime(endTime - startTime)
       setResponse(result)
       setStatusCode(200)
-      addToast('请求成功', 'success')
     } catch (error: any) {
       const endTime = Date.now()
       setResponseTime(endTime - startTime)
       setStatusCode(error.status || 500)
       setResponse({ error: error.message })
-      addToast('请求失败', 'error')
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <PageContainer title="API 测试">
-      <Card>
-        <CardHeader>
-          <CardTitle>API 测试工具</CardTitle>
-          <CardDescription>测试您的 API 连接和配置</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <PageContainer
+      title="API 测试"
+      description="测试 API 连接和配置"
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Request Panel */}
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 mb-5">
+              <div className="w-2 h-2 rounded-full bg-primary" />
+              <h3 className="font-semibold text-sm">请求</h3>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="endpoint">API 端点</Label>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">端点</Label>
                 <Select
-                  id="endpoint"
                   value={endpoint}
                   onChange={(e) => handleEndpointChange(e.target.value)}
                 >
@@ -128,59 +142,96 @@ export function ApiTest() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="apiToken">API 令牌</Label>
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">API 令牌</Label>
                 <Input
-                  id="apiToken"
                   type="password"
                   value={apiToken}
                   onChange={(e) => setApiToken(e.target.value)}
                   placeholder="sk-..."
-                  required
                 />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="requestBody">请求体 (JSON)</Label>
-              <Textarea
-                id="requestBody"
-                value={requestBody}
-                onChange={(e) => setRequestBody(e.target.value)}
-                rows={12}
-                className="font-mono text-sm"
-                placeholder='{"model": "gpt-3.5-turbo", "messages": [...]}'
-              />
-              <p className="text-sm text-muted-foreground">直接编辑 JSON 格式的请求体</p>
-            </div>
-
-            <Button type="submit" disabled={isLoading} className="w-full sm:w-auto">
-              <Send className="h-4 w-4" />
-              {isLoading ? '发送中...' : '发送请求'}
-            </Button>
-          </form>
-
-          {response && (
-            <div className="mt-6 space-y-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <h3 className="font-semibold">响应结果</h3>
-                <div className="flex gap-2">
-                  <Badge variant={statusCode === 200 ? 'success' : 'destructive'}>
-                    {statusCode === 200 ? '成功' : '失败'}
-                  </Badge>
-                  <Badge variant="outline">{responseTime}ms</Badge>
-                </div>
+              <div className="space-y-2">
+                <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">请求体</Label>
+                <Textarea
+                  value={requestBody}
+                  onChange={(e) => setRequestBody(e.target.value)}
+                  rows={14}
+                  className="font-mono text-sm"
+                />
               </div>
-              <Card>
-                <CardContent className="p-4">
-                  <pre className="whitespace-pre-wrap break-words text-sm font-mono max-h-96 overflow-y-auto">
-                    {JSON.stringify(response, null, 2)}
-                  </pre>
-                </CardContent>
-              </Card>
+
+              <Button type="submit" disabled={isLoading} className="w-full">
+                {isLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                    发送中...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    发送请求
+                  </>
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Response Panel */}
+        <Card className={cn(
+          "transition-all duration-300",
+          !response && "opacity-60"
+        )}>
+          <CardContent className="p-5">
+            <div className="flex items-center justify-between mb-5">
+              <div className="flex items-center gap-2">
+                <div className={cn(
+                  "w-2 h-2 rounded-full",
+                  !statusCode ? "bg-muted-foreground/30" :
+                  statusCode === 200 ? "bg-success" : "bg-destructive"
+                )} />
+                <h3 className="font-semibold text-sm">响应</h3>
+              </div>
+              {statusCode && (
+                <div className="flex items-center gap-2">
+                  <Badge variant={statusCode === 200 ? 'success' : 'destructive'} className="text-xs">
+                    {statusCode === 200 ? (
+                      <><CheckCircle className="h-3 w-3 mr-1" />{statusCode}</>
+                    ) : (
+                      <><XCircle className="h-3 w-3 mr-1" />{statusCode}</>
+                    )}
+                  </Badge>
+                  <Badge variant="outline" className="text-xs font-mono">
+                    <Clock className="h-3 w-3 mr-1" />
+                    {responseTime}ms
+                  </Badge>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={handleCopyResponse}
+                    title="复制响应"
+                  >
+                    <Copy className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
             </div>
-          )}
-        </CardContent>
-      </Card>
+
+            {response ? (
+              <pre className="whitespace-pre-wrap break-words text-sm font-mono bg-muted/50 rounded-lg p-4 max-h-[500px] overflow-y-auto scrollbar-thin">
+                {JSON.stringify(response, null, 2)}
+              </pre>
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground/40">
+                <Send className="h-10 w-10 mb-3" />
+                <p className="text-sm">发送请求后在此查看响应</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </PageContainer>
   )
 }
