@@ -33,6 +33,8 @@ type EditMode = 'form' | 'json'
 const channelTypes = [
   { value: 'azure-openai', label: 'Azure OpenAI' },
   { value: 'openai', label: 'OpenAI' },
+  { value: 'azure-openai-audio', label: 'Azure OpenAI Audio' },
+  { value: 'openai-audio', label: 'OpenAI Audio' },
   { value: 'claude', label: 'Claude' },
   { value: 'claude-to-openai', label: 'Claude → OpenAI' },
   { value: 'openai-responses', label: 'OpenAI Responses' },
@@ -49,10 +51,12 @@ export function Channels() {
     endpoint: '',
     api_key: '',
     api_version: '',
+    supported_models: [],
     deployment_mapper: {},
   })
   const [channelKey, setChannelKey] = useState('')
   const [jsonValue, setJsonValue] = useState('')
+  const [supportedModelRows, setSupportedModelRows] = useState<Array<{ model: string }>>([])
   const [mapperRows, setMapperRows] = useState<Array<{ request: string; deployment: string }>>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [openMenu, setOpenMenu] = useState<string | null>(null)
@@ -109,10 +113,12 @@ export function Channels() {
       endpoint: '',
       api_key: '',
       api_version: '',
+      supported_models: [],
       deployment_mapper: {},
     })
     setChannelKey('')
     setJsonValue('')
+    setSupportedModelRows([])
     setMapperRows([])
     setEditingKey(null)
     setEditMode('form')
@@ -129,6 +135,7 @@ export function Channels() {
     const config = typeof channel.value === 'string' ? JSON.parse(channel.value) : channel.value
     setFormData(config)
     setJsonValue(JSON.stringify(config, null, 2))
+    setSupportedModelRows((config.supported_models || []).map((model) => ({ model })))
 
     if (config.deployment_mapper) {
       const rows = Object.entries(config.deployment_mapper).map(([request, deployment]) => ({
@@ -166,7 +173,16 @@ export function Channels() {
         }
       })
 
-      config = { ...formData, deployment_mapper }
+      const supported_models = supportedModelRows
+        .map((row) => row.model.trim())
+        .filter((model) => model.length > 0)
+
+      if (supported_models.length === 0) {
+        addToast('请至少填写一个支持模型', 'error')
+        return
+      }
+
+      config = { ...formData, supported_models, deployment_mapper }
       if (!formData.api_version) {
         delete config.api_version
       }
@@ -190,13 +206,17 @@ export function Channels() {
           deployment_mapper[row.request] = row.deployment
         }
       })
-      const config = { ...formData, deployment_mapper }
+      const supported_models = supportedModelRows
+        .map((row) => row.model.trim())
+        .filter((model) => model.length > 0)
+      const config = { ...formData, supported_models, deployment_mapper }
       setJsonValue(JSON.stringify(config, null, 2))
       setEditMode('json')
     } else {
       try {
         const config = JSON.parse(jsonValue)
         setFormData(config)
+        setSupportedModelRows((config.supported_models || []).map((model: string) => ({ model })))
         if (config.deployment_mapper) {
           const rows = Object.entries(config.deployment_mapper).map(([request, deployment]) => ({
             request,
@@ -213,6 +233,20 @@ export function Channels() {
 
   const addMapperRow = () => {
     setMapperRows([...mapperRows, { request: '', deployment: '' }])
+  }
+
+  const addSupportedModelRow = () => {
+    setSupportedModelRows([...supportedModelRows, { model: '' }])
+  }
+
+  const removeSupportedModelRow = (index: number) => {
+    setSupportedModelRows(supportedModelRows.filter((_, i) => i !== index))
+  }
+
+  const updateSupportedModelRow = (index: number, value: string) => {
+    const newRows = [...supportedModelRows]
+    newRows[index].model = value
+    setSupportedModelRows(newRows)
   }
 
   const removeMapperRow = (index: number) => {
@@ -299,7 +333,7 @@ export function Channels() {
             <div className="divide-y">
               {filteredData?.map((channel) => {
                 const config = typeof channel.value === 'string' ? JSON.parse(channel.value) : channel.value
-                const modelCount = Object.keys(config.deployment_mapper || {}).length
+                const modelCount = (config.supported_models || []).length
                 const isMenuOpen = openMenu === channel.key
 
                 return (
@@ -490,7 +524,7 @@ export function Channels() {
                         placeholder="sk-..."
                       />
                     </div>
-                    {(formData.type === 'azure-openai' || formData.type === 'claude' || formData.type === 'azure-openai-responses') && (
+                    {(formData.type === 'azure-openai' || formData.type === 'azure-openai-audio' || formData.type === 'claude' || formData.type === 'azure-openai-responses') && (
                       <div className="space-y-2">
                         <Label className="text-sm">API 版本</Label>
                         <Input
@@ -505,6 +539,57 @@ export function Channels() {
               </CardContent>
             </Card>
 
+            <Card>
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-medium flex items-center gap-2">
+                      <Cpu className="h-4 w-4 text-muted-foreground" />
+                      支持模型
+                    </h3>
+                    <p className="text-sm text-muted-foreground">用于声明这个频道接受哪些请求模型名，可填写精确值或通配符</p>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={addSupportedModelRow}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    添加
+                  </Button>
+                </div>
+
+                {supportedModelRows.length === 0 ? (
+                  <button
+                    type="button"
+                    onClick={addSupportedModelRow}
+                    className="w-full py-8 border-2 border-dashed rounded-xl text-sm text-muted-foreground hover:text-foreground hover:border-primary/50 transition-colors flex flex-col items-center justify-center gap-2"
+                  >
+                    <Plus className="h-5 w-5" />
+                    添加支持模型
+                  </button>
+                ) : (
+                  <div className="space-y-2">
+                    {supportedModelRows.map((row, index) => (
+                      <div key={index} className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
+                        <Input
+                          value={row.model}
+                          onChange={(e) => updateSupportedModelRow(index, e.target.value)}
+                          placeholder="gpt-4o-mini-tts 或 gpt-*"
+                          className="flex-1 bg-background text-sm"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-9 w-9 text-destructive hover:text-destructive flex-shrink-0"
+                          onClick={() => removeSupportedModelRow(index)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Model Mappings */}
             <Card>
               <CardContent className="p-5">
@@ -514,7 +599,7 @@ export function Channels() {
                       <Cpu className="h-4 w-4 text-muted-foreground" />
                       模型映射
                     </h3>
-                    <p className="text-sm text-muted-foreground">将请求模型名映射到实际部署名</p>
+                    <p className="text-sm text-muted-foreground">可选。将请求模型名映射到实际上游 deployment；未填写时默认使用同名</p>
                   </div>
                   <Button type="button" variant="outline" size="sm" onClick={addMapperRow}>
                     <Plus className="h-4 w-4 mr-1" />

@@ -43,7 +43,31 @@ const dbOperations = {
     migrate: async (c: Context<HonoCustomType>) => {
         const version = await getSetting(c, CONSTANTS.DB_VERSION_KEY);
         if (version != CONSTANTS.DB_VERSION) {
-            // TODO: Perform migration logic here
+            const channels = await c.env.DB.prepare(
+                "SELECT key, value FROM channel_config"
+            ).all<Pick<ChannelConfigRow, "key" | "value">>();
+
+            for (const row of channels.results || []) {
+                const config = (() => {
+                    try {
+                        return JSON.parse(row.value) as ChannelConfig;
+                    } catch {
+                        return null;
+                    }
+                })();
+
+                if (!config) {
+                    continue;
+                }
+
+                config.supported_models = Object.keys(config.deployment_mapper || {});
+
+                await c.env.DB.prepare(
+                    `UPDATE channel_config
+                     SET value = ?, updated_at = datetime('now')
+                     WHERE key = ?`
+                ).bind(JSON.stringify(config), row.key).run();
+            }
 
             // Update the version in the settings table
             await saveSetting(c, CONSTANTS.DB_VERSION_KEY, CONSTANTS.DB_VERSION);

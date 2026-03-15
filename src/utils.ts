@@ -106,3 +106,32 @@ export const findDeploymentMapping = (
 
     return null;
 }
+
+export const findSupportedModel = (
+    supportedModels: string[] | undefined,
+    model: string
+): string | null => {
+    if (!supportedModels || supportedModels.length === 0) return null;
+
+    if (supportedModels.includes(model)) {
+        return model;
+    }
+
+    for (const pattern of supportedModels) {
+        if (pattern.includes('*') && wildcardMatch(pattern, model)) {
+            return pattern;
+        }
+    }
+
+    return null;
+}
+
+export const getSupportedModels = (
+    config: Pick<ChannelConfig, "supported_models" | "deployment_mapper">
+): string[] => {
+    if (config.supported_models && config.supported_models.length > 0) {
+        return config.supported_models;
+    }
+
+    return Object.keys(config.deployment_mapper || {});
+}

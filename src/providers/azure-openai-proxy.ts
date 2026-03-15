@@ -64,7 +64,7 @@ export default {
         }
 
         if (response.ok) {
-            await checkoutUsageData(saveUsage, response)
+            await checkoutUsageData(saveUsage, response, requestBody)
         }
 
         return response
