@@ -38,6 +38,11 @@ const requestTemplates: Record<string, any> = {
     model: 'gpt-4o-mini',
     input: 'Hello, Responses API!',
   },
+  '/v1/audio/speech': {
+    model: 'gpt-4o-mini-tts',
+    input: 'The quick brown fox jumped over the lazy dog',
+    voice: 'alloy',
+  },
   '/v1/completions': {
     model: 'gpt-3.5-turbo-instruct',
     prompt: 'Once upon a time',
@@ -137,6 +142,7 @@ export function ApiTest() {
                   <option value="/v1/chat/completions">/v1/chat/completions</option>
                   <option value="/v1/messages">/v1/messages</option>
                   <option value="/v1/responses">/v1/responses</option>
+                  <option value="/v1/audio/speech">/v1/audio/speech</option>
                   <option value="/v1/completions">/v1/completions</option>
                 </Select>
               </div>

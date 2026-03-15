@@ -14,6 +14,8 @@ export class PricingGetEndpoint extends OpenAPIRoute {
             ...CommonSuccessfulResponse(z.record(z.object({
                 input: z.number(),
                 output: z.number(),
+                cache: z.number().optional(),
+                request: z.number().optional(),
             }))),
             ...CommonErrorResponse,
         },
@@ -44,6 +46,8 @@ export class PricingUpdateEndpoint extends OpenAPIRoute {
                         schema: z.record(z.object({
                             input: z.number(),
                             output: z.number(),
+                            cache: z.number().optional(),
+                            request: z.number().optional(),
                         })),
                     }
                 }

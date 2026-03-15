@@ -1,7 +1,7 @@
 import { Context } from "hono"
 import { getApiKeyFromHeaders, fetchTokenData, fetchChannelsForToken } from "./auth"
 import { RouteId, getRoutePolicy } from "./route-policy"
-import { findDeploymentMapping } from "../../utils"
+import { findDeploymentMapping, findSupportedModel, getSupportedModels } from "../../utils"
 import { TokenUtils } from "../../admin/token_utils"
 
 export type ChannelResolution = {
@@ -63,7 +63,17 @@ export const resolveChannel = async (
             continue;
         }
 
-        const mapping = findDeploymentMapping(config.deployment_mapper, model);
+        const supportedPattern = findSupportedModel(getSupportedModels(config), model)
+
+        if (!supportedPattern) {
+            continue;
+        }
+
+        const mapping = findDeploymentMapping(config.deployment_mapper, model) || {
+            pattern: supportedPattern,
+            deployment: model,
+        };
+
         if (mapping) {
             availableChannels.push({
                 key: row.key,
@@ -74,7 +84,7 @@ export const resolveChannel = async (
     }
 
     if (availableChannels.length === 0) {
-        return c.text(`Model not mapped: ${model}. Please configure deployment_mapper.`, 400);
+        return c.text(`Model not supported: ${model}. Please configure supported_models or deployment_mapper.`, 400);
     }
 
     const randomIndex = Math.floor(Math.random() * availableChannels.length);

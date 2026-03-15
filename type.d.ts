@@ -35,6 +35,8 @@ type ApiTokenRow = BaseDbRow & {
 type ChannelType =
     | "azure-openai"
     | "openai"
+    | "azure-openai-audio"
+    | "openai-audio"
     | "claude"
     | "claude-to-openai"
     | "openai-responses"
@@ -48,6 +50,7 @@ type ChannelConfig = {
     endpoint: string;
     api_key: string;
     api_version?: string;
+    supported_models?: string[];
     deployment_mapper: Record<string, string>;
     model_pricing?: Record<string, ModelPricing>;
 }
@@ -82,6 +85,7 @@ type ModelPricing = {
     input: number;
     output: number;
     cache?: number;
+    request?: number;
 }
 
 type ApiTokenData = {

@@ -50,10 +50,13 @@ export class ChannelUpsertEndpoint extends OpenAPIRoute {
                             endpoint: z.string().describe('API endpoint'),
                             api_key: z.string().describe('API key'),
                             api_version: z.string().optional().describe('API version'),
+                            supported_models: z.array(z.string()).describe('Supported request model list'),
                             deployment_mapper: z.record(z.string()).describe('Model deployment mapping'),
                             model_pricing: z.record(z.object({
                                 input: z.number().describe('Input token price per 1000 tokens'),
                                 output: z.number().describe('Output token price per 1000 tokens'),
+                                cache: z.number().optional().describe('Cache token price per 1000 tokens'),
+                                request: z.number().optional().describe('Fixed request price'),
                             })).optional().describe('Custom model pricing for this channel'),
                         }),
                     },

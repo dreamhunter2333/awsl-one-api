@@ -33,17 +33,18 @@ export const TokenUtils = {
 
         const pricing = await this.getPricing(c, model, targetChannelConfig);
         const hasTokens = usage.prompt_tokens != null && usage.completion_tokens != null;
+        const requestCost = pricing?.request || 0
 
-        if (pricing && hasTokens) {
-            const inputCost = usage.prompt_tokens! * pricing.input;
-            const outputCost = usage.completion_tokens! * pricing.output;
+        if (pricing && (hasTokens || requestCost > 0)) {
+            const inputCost = hasTokens ? usage.prompt_tokens! * pricing.input : 0;
+            const outputCost = hasTokens ? usage.completion_tokens! * pricing.output : 0;
 
             let cacheCost = 0;
-            if (usage.cached_tokens && usage.cached_tokens > 0 && pricing.cache) {
+            if (hasTokens && usage.cached_tokens && usage.cached_tokens > 0 && pricing.cache) {
                 cacheCost = usage.cached_tokens * pricing.cache;
             }
 
-            const totalCost = inputCost + outputCost + cacheCost;
+            const totalCost = inputCost + outputCost + cacheCost + requestCost;
 
             await this.updateUsage(c, apiKey, totalCost);
 
@@ -52,7 +53,7 @@ export const TokenUtils = {
                 + '*'.repeat(apiKey.length / 3)
                 + apiKey.slice((2 * apiKey.length) / 3)
             );
-            console.log(`Model: ${model}, Channel: ${targetChannelKey}, apiKey: ${maskedApiKey}, Cost: ${totalCost} (input: ${inputCost}, cache: ${cacheCost}, output: ${outputCost})`);
+            console.log(`Model: ${model}, Channel: ${targetChannelKey}, apiKey: ${maskedApiKey}, Cost: ${totalCost} (request: ${requestCost}, input: ${inputCost}, cache: ${cacheCost}, output: ${outputCost})`);
         } else {
             console.warn(`No pricing found for model: ${model} in channel: ${targetChannelKey}`);
         }

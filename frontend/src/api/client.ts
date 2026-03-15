@@ -103,6 +103,15 @@ async function responseInterceptor(response: Response): Promise<any> {
     return response.json()
   }
 
+  if (contentType && contentType.startsWith('audio/')) {
+    const blob = await response.blob()
+    return {
+      object: 'audio',
+      contentType,
+      size: blob.size,
+    }
+  }
+
   return response.text()
 }
 

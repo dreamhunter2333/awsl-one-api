@@ -51,4 +51,5 @@ class UnifiedProxyEndpoint extends OpenAPIRoute {
 api.post("/v1/chat/completions", UnifiedProxyEndpoint)
 api.post("/v1/messages", UnifiedProxyEndpoint)
 api.post("/v1/responses", UnifiedProxyEndpoint)
+api.post("/v1/audio/speech", UnifiedProxyEndpoint)
 api.get("/v1/models", ModelsEndpoint)

@@ -2,6 +2,7 @@ import { Context } from "hono";
 import { OpenAPIRoute } from "chanfana";
 import { z } from "zod";
 import { getApiKeyFromHeaders, fetchTokenData, fetchChannelsForToken } from "./shared/auth";
+import { getSupportedModels } from "../utils";
 
 export class ModelsEndpoint extends OpenAPIRoute {
     schema = {
@@ -57,10 +58,8 @@ export class ModelsEndpoint extends OpenAPIRoute {
 
         for (const row of channelsResult.results) {
             const config = JSON.parse(row.value) as ChannelConfig;
-            if (config.deployment_mapper) {
-                for (const modelName of Object.keys(config.deployment_mapper)) {
-                    modelsSet.add(modelName);
-                }
+            for (const modelName of getSupportedModels(config)) {
+                modelsSet.add(modelName);
             }
         }
 

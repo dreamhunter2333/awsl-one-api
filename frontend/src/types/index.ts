@@ -6,11 +6,12 @@ export interface Channel {
 
 export interface ChannelConfig {
   name: string
-  type: 'openai' | 'azure-openai' | 'claude' | 'claude-to-openai' | 'openai-responses' | 'azure-openai-responses'
+  type: 'openai' | 'azure-openai' | 'openai-audio' | 'azure-openai-audio' | 'claude' | 'claude-to-openai' | 'openai-responses' | 'azure-openai-responses'
   endpoint: string
   api_key: string
   api_version?: string
-  deployment_mapper?: Record<string, string>
+  supported_models: string[]
+  deployment_mapper: Record<string, string>
 }
 
 export interface Token {
@@ -29,6 +30,7 @@ export interface PricingModel {
   input: number
   output: number
   cache?: number
+  request?: number
 }
 
 export type PricingConfig = Record<string, PricingModel>

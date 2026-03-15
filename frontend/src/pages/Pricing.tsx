@@ -27,7 +27,7 @@ export function Pricing() {
   const [editMode, setEditMode] = useState<EditMode>('table')
   const [jsonValue, setJsonValue] = useState('')
   const [pricingRows, setPricingRows] = useState<
-    Array<{ model: string; input: number; output: number; cache: number }>
+    Array<{ model: string; input: number; output: number; cache: number; request: number }>
   >([])
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -49,6 +49,7 @@ export function Pricing() {
         input: pricing.input,
         output: pricing.output,
         cache: pricing.cache || 0,
+        request: pricing.request || 0,
       }))
       setPricingRows(rows)
       setJsonValue(JSON.stringify(data, null, 2))
@@ -84,6 +85,7 @@ export function Pricing() {
             input: row.input || 0,
             output: row.output || 0,
             cache: row.cache || 0,
+            request: row.request || 0,
           }
         }
       })
@@ -108,6 +110,7 @@ export function Pricing() {
             input: row.input || 0,
             output: row.output || 0,
             cache: row.cache || 0,
+            request: row.request || 0,
           }
         }
       })
@@ -121,6 +124,7 @@ export function Pricing() {
           input: (pricing as { input: number }).input || 0,
           output: (pricing as { output: number }).output || 0,
           cache: (pricing as { cache?: number }).cache || 0,
+          request: (pricing as { request?: number }).request || 0,
         }))
         setPricingRows(rows)
         setEditMode('table')
@@ -131,14 +135,14 @@ export function Pricing() {
   }
 
   const addRow = () => {
-    setPricingRows([...pricingRows, { model: '', input: 0, output: 0, cache: 0 }])
+    setPricingRows([...pricingRows, { model: '', input: 0, output: 0, cache: 0, request: 0 }])
   }
 
   const removeRow = (index: number) => {
     setPricingRows(pricingRows.filter((_, i) => i !== index))
   }
 
-  const updateRow = (index: number, field: 'model' | 'input' | 'output' | 'cache', value: string | number) => {
+  const updateRow = (index: number, field: 'model' | 'input' | 'output' | 'cache' | 'request', value: string | number) => {
     const newRows = [...pricingRows]
     ;(newRows[index] as any)[field] = value
     setPricingRows(newRows)
@@ -173,7 +177,7 @@ export function Pricing() {
         <Info className="h-4 w-4 mt-0.5 flex-shrink-0 text-primary" />
         <span>
           基础配额单位：<span className="font-mono text-foreground">1M tokens = $1.00</span>。
-          倍率表示相对成本，如输入倍率 30 = 每百万 token 消耗 $30 配额。
+          倍率表示相对成本，如输入倍率 30 = 每百万 token 消耗 $30 配额。`按次` 为固定扣费，同样使用该配额单位，例如 15000 = $0.015 / 次。
         </span>
       </div>
 
@@ -215,18 +219,19 @@ export function Pricing() {
             {/* Table */}
             <div className="rounded-xl border bg-card overflow-hidden">
               {/* Header */}
-              <div className="grid gap-2 px-4 py-2.5 border-b bg-muted/30" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 40px' }}>
+              <div className="grid gap-2 px-4 py-2.5 border-b bg-muted/30" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 40px' }}>
                 <span className="text-xs font-medium text-muted-foreground">模型名称</span>
                 <span className="text-xs font-medium text-muted-foreground">输入倍率</span>
                 <span className="text-xs font-medium text-muted-foreground">输出倍率</span>
                 <span className="text-xs font-medium text-muted-foreground">缓存倍率</span>
+                <span className="text-xs font-medium text-muted-foreground">按次</span>
                 <span />
               </div>
 
               {/* Rows */}
               <div className="divide-y">
                 {filteredRows.map((row) => (
-                  <div key={row._i} className="grid gap-2 px-4 py-2 items-center hover:bg-muted/20 transition-colors" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 40px' }}>
+                  <div key={row._i} className="grid gap-2 px-4 py-2 items-center hover:bg-muted/20 transition-colors" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 40px' }}>
                     <Input
                       value={row.model}
                       onChange={(e) => updateRow(row._i, 'model', e.target.value)}
@@ -253,6 +258,14 @@ export function Pricing() {
                       type="number"
                       value={row.cache}
                       onChange={(e) => updateRow(row._i, 'cache', parseFloat(e.target.value) || 0)}
+                      step="0.001"
+                      min="0"
+                      className="font-mono text-sm h-8"
+                    />
+                    <Input
+                      type="number"
+                      value={row.request}
+                      onChange={(e) => updateRow(row._i, 'request', parseFloat(e.target.value) || 0)}
                       step="0.001"
                       min="0"
                       className="font-mono text-sm h-8"
