@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -8,7 +8,8 @@ import { Select } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/components/ui/use-toast'
 import { apiClient } from '@/api/client'
-import { Send, Clock, CheckCircle, XCircle, Copy } from 'lucide-react'
+import { AudioTestResponse, TestResponse } from '@/types'
+import { Send, Clock, CheckCircle, XCircle, Copy, Download } from 'lucide-react'
 import { PageContainer } from '@/components/ui/page-container'
 import { cn, copyToClipboard } from '@/lib/utils'
 
@@ -64,6 +65,18 @@ export function ApiTest() {
 
   const { addToast } = useToast()
 
+  const isAudioResponse = (value: TestResponse | { error: string } | null): value is AudioTestResponse => {
+    return !!value && value.object === 'audio' && typeof value.url === 'string'
+  }
+
+  useEffect(() => {
+    return () => {
+      if (isAudioResponse(response)) {
+        URL.revokeObjectURL(response.url)
+      }
+    }
+  }, [response])
+
   const handleEndpointChange = (newEndpoint: string) => {
     setEndpoint(newEndpoint)
     setRequestBody(JSON.stringify(requestTemplates[newEndpoint], null, 2))
@@ -72,7 +85,15 @@ export function ApiTest() {
   const handleCopyResponse = async () => {
     if (response) {
       try {
-        await copyToClipboard(JSON.stringify(response, null, 2))
+        const payload = isAudioResponse(response)
+          ? {
+              object: response.object,
+              contentType: response.contentType,
+              size: response.size,
+              filename: response.filename,
+            }
+          : response
+        await copyToClipboard(JSON.stringify(payload, null, 2))
         addToast('已复制到剪贴板', 'success')
       } catch {
         addToast('复制失败', 'error')
@@ -226,9 +247,27 @@ export function ApiTest() {
             </div>
 
             {response ? (
-              <pre className="whitespace-pre-wrap break-words text-sm font-mono bg-muted/50 rounded-lg p-4 max-h-[500px] overflow-y-auto scrollbar-thin">
-                {JSON.stringify(response, null, 2)}
-              </pre>
+              isAudioResponse(response) ? (
+                <div className="space-y-4 rounded-lg bg-muted/50 p-4">
+                  <div className="space-y-1">
+                    <div className="text-sm font-medium">音频返回成功</div>
+                    <div className="text-xs text-muted-foreground font-mono">
+                      {response.contentType} · {response.size} bytes
+                    </div>
+                  </div>
+                  <audio controls src={response.url} className="w-full" />
+                  <Button asChild variant="outline" size="sm">
+                    <a href={response.url} download={response.filename}>
+                      <Download className="h-4 w-4" />
+                      下载音频
+                    </a>
+                  </Button>
+                </div>
+              ) : (
+                <pre className="whitespace-pre-wrap break-words text-sm font-mono bg-muted/50 rounded-lg p-4 max-h-[500px] overflow-y-auto scrollbar-thin">
+                  {JSON.stringify(response, null, 2)}
+                </pre>
+              )
             ) : (
               <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground/40">
                 <Send className="h-10 w-10 mb-3" />

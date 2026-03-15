@@ -1,4 +1,4 @@
-import { ApiResponse } from '@/types'
+import { ApiResponse, AudioTestResponse, TestResponse } from '@/types'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
@@ -115,6 +115,12 @@ async function responseInterceptor(response: Response): Promise<any> {
   return response.text()
 }
 
+function buildAudioFilename(endpoint: string, contentType: string): string {
+  const extension = contentType.split('/')[1]?.split(';')[0] || 'bin'
+  const suffix = endpoint.split('/').filter(Boolean).join('-') || 'response'
+  return `${suffix}.${extension}`
+}
+
 // 统一请求方法
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const url = `${BASE_URL}${endpoint}`
@@ -186,7 +192,7 @@ export const apiClient = {
   initDatabase: () => request('/api/admin/db_initialize', { method: 'POST' }),
 
   // API Test - 使用自定义 token，不走通用拦截器
-  testApi: async (endpoint: string, token: string, body: unknown) => {
+  testApi: async (endpoint: string, token: string, body: unknown): Promise<TestResponse> => {
     const url = `${BASE_URL}${endpoint}`
     const response = await fetch(url, {
       method: 'POST',
@@ -196,6 +202,22 @@ export const apiClient = {
       },
       body: JSON.stringify(body),
     })
+
+    if (response.ok) {
+      const contentType = response.headers.get('content-type') || ''
+      if (contentType.startsWith('audio/')) {
+        const blob = await response.blob()
+        const audioResponse: AudioTestResponse = {
+          object: 'audio',
+          contentType,
+          size: blob.size,
+          url: URL.createObjectURL(blob),
+          filename: buildAudioFilename(endpoint, contentType),
+        }
+        return audioResponse
+      }
+    }
+
     return responseInterceptor(response)
   },
 

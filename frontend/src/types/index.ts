@@ -53,7 +53,15 @@ export interface TestRequest {
   stream?: boolean
 }
 
-export interface TestResponse {
+export interface AudioTestResponse {
+  object: 'audio'
+  contentType: string
+  size: number
+  url: string
+  filename: string
+}
+
+export interface JsonTestResponse {
   id?: string
   model?: string
   choices?: Array<{
@@ -68,4 +76,7 @@ export interface TestResponse {
     completion_tokens?: number
     total_tokens?: number
   }
+  [key: string]: any
 }
+
+export type TestResponse = JsonTestResponse | AudioTestResponse
