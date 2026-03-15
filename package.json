@@ -1,9 +1,9 @@
 {
   "name": "awsl-ai-proxy",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy --minify",
-    "cf-typegen": "wrangler types --include-env=false"
+    "dev": "npx wrangler dev",
+    "deploy": "npx wrangler deploy --minify",
+    "cf-typegen": "npx wrangler types --include-env=false"
   },
   "dependencies": {
     "chanfana": "^2.8.3",
